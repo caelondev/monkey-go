@@ -23,6 +23,7 @@ func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
 	l.skipWhitespace()
+	l.skipComments()
 
 	switch l.currentChar {
 	case ';':
@@ -105,6 +106,33 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
+func (l *Lexer) skipComments() {
+	if l.currentChar == '/' {
+		if l.peekChar() == '/' {
+			l.readChar() // Advance first '/'
+
+			for !l.isAtEnd() && l.currentChar != '\n' {
+				l.readChar()
+			}
+
+			l.readChar() // Eat '\n'
+		} else if l.peekChar() == '*' { // Selective comment
+			l.readChar() // Eat '/'
+
+			for !l.isAtEnd() && !(l.currentChar == '*' && l.peekChar() == '/') {
+				l.readChar()
+			}
+
+			// Consume '*/'
+			l.readChar()
+			l.readChar()
+		}
+	}
+
+	// Skip whitespace after comment
+	l.skipWhitespace()
+}
+
 func (l *Lexer) readIdentifier() string {
 	start := l.lastPosition
 
@@ -121,7 +149,6 @@ func (l *Lexer) peekChar() byte {
 	}
 
 	return l.source[l.currentPosition]
-
 }
 
 // Advance
