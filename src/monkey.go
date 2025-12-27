@@ -10,9 +10,6 @@ import (
 
 func Main() {
 	src := `
-	var = = 10;
-	var y = 15;
-	var foobar = 192882;
 	`
 
 	l := lexer.New(src)

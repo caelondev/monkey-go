@@ -8,13 +8,27 @@ import (
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.currentToken.Type {
 	case token.VAR:
-		return p.parseLetStatement()
+		return p.parseVarStatement()
+	case token.RETURN:
+		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
-func (p *Parser) parseLetStatement() *ast.LetStatement {
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.currentToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken() // Advance
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseVarStatement() *ast.LetStatement {
 	stmt := &ast.LetStatement{Token: p.currentToken}
 
 	if !p.expectPeek(token.IDENTIFIER) {
@@ -27,10 +41,31 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	// NOTE: Skip tokens until semicolon
-	for !p.currentTokenIs(token.SEMICOLON) {
+	p.nextToken() // ASSIGNMENT shifts to current
+	// so just advance here
+
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
+
+	return stmt
+}
+
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	stmt := &ast.ReturnStatement{Token: p.currentToken}
+
+	p.nextToken() // Advance past "return" keyword
+
+	// return;
+	if p.currentTokenIs(token.SEMICOLON) {
+		return stmt
+	}
+
+	stmt.ReturnValue = p.parseExpression(LOWEST)
+
+	p.expectPeek(token.SEMICOLON)
 
 	return stmt
 }
