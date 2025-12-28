@@ -10,6 +10,7 @@ import (
 
 func Main() {
 	src := `
+(19 + 24) / 12 if cond else helloworld;
 	`
 
 	l := lexer.New(src)
@@ -24,6 +25,6 @@ func Main() {
 			fmt.Printf("Error: %s\n", err)
 		}
 	} else {
-		litter.Dump(program) // Only dump if no errors
+		litter.Dump(program)
 	}
 }

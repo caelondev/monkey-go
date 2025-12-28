@@ -69,8 +69,21 @@ func (p *Parser) parseGroupExpression() ast.Expression {
 	return expr
 }
 
+func (p *Parser) parseBooleanExpression() ast.Expression {
+	var value bool
+
+	switch p.currentToken.Type {
+	case token.TRUE:
+		value = true
+	case token.FALSE:
+		value = false
+	}
+
+	return &ast.BooleanExpression{Token: p.currentToken, Value: value}
+}
+
 /*
-* [ PREFIX EXPRESSIONS ]
+* [ INFIX EXPRESSIONS ]
 **/
 
 func (p *Parser) parseBinaryExpression(left ast.Expression) ast.Expression {
@@ -83,6 +96,30 @@ func (p *Parser) parseBinaryExpression(left ast.Expression) ast.Expression {
 	pre := p.currentPrecedence()
 	p.nextToken()
 	expr.Right = p.parseExpression(pre)
+
+	return expr
+}
+
+func (p *Parser) parseTernaryExpression(left ast.Expression) ast.Expression {
+	// Syntax ---
+	//
+	// <consequence> if <condition> else <alternate>
+	//
+
+	expr := &ast.TernaryExpression{Token: p.currentToken}
+	expr.Consequence = left
+
+	pre := p.currentPrecedence()
+	p.nextToken() // Eat IF Token
+	expr.Condition = p.parseExpression(pre)
+
+	if !p.expectPeek(token.ELSE) {
+		return nil
+	}
+
+	p.nextToken() // Eat ELSE
+
+	expr.Alternative = p.parseExpression(pre)
 
 	return expr
 }

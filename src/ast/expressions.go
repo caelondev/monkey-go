@@ -44,3 +44,25 @@ func (be *BinaryExpression) expressionNode() {}
 func (be *BinaryExpression) TokenLiteral() string {
 	return be.Token.Literal
 }
+
+type BooleanExpression struct {
+	Token token.Token
+	Value bool
+}
+
+func (be *BooleanExpression) expressionNode() {}
+func (be *BooleanExpression) TokenLiteral() string {
+	return be.Token.Literal
+}
+
+type TernaryExpression struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence Expression
+	Alternative Expression
+}
+
+func (te *TernaryExpression) expressionNode() {}
+func (te *TernaryExpression) TokenLiteral() string {
+	return te.Token.Literal
+}

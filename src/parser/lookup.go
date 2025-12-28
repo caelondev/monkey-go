@@ -5,6 +5,7 @@ import "github.com/caelondev/monkey/src/token"
 const (
 	_ int = iota
 	LOWEST
+	TERNARY
 	EQUALITY
 	COMPARISON
 	ADDITIVE
@@ -23,6 +24,7 @@ var precedence = map[token.TokenType]int{
 	token.STAR:             MULTIPLICATIVE,
 	token.SLASH:            MULTIPLICATIVE,
 	token.LEFT_PARENTHESIS: CALL,
+	token.IF:               TERNARY,
 }
 
 func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
@@ -56,7 +58,8 @@ func (p *Parser) createLookupTable() {
 	p.registerPrefix(token.NUMBER, p.parseNumberExpression)
 	p.registerPrefix(token.BANG, p.parseUnaryExpression)
 	p.registerPrefix(token.MINUS, p.parseUnaryExpression)
-	p.registerPrefix(token.LEFT_PARENTHESIS, p.parseGroupExpression)
+	p.registerPrefix(token.TRUE, p.parseBooleanExpression)
+	p.registerPrefix(token.FALSE, p.parseBooleanExpression)
 
 	p.registerInfix(token.PLUS, p.parseBinaryExpression)
 	p.registerInfix(token.MINUS, p.parseBinaryExpression)
@@ -67,4 +70,7 @@ func (p *Parser) createLookupTable() {
 	p.registerInfix(token.NOT_EQUAL, p.parseBinaryExpression)
 	p.registerInfix(token.LESS, p.parseBinaryExpression)
 	p.registerInfix(token.GREATER, p.parseBinaryExpression)
+
+	p.registerPrefix(token.LEFT_PARENTHESIS, p.parseGroupExpression)
+	p.registerInfix(token.IF, p.parseTernaryExpression) // Ternary
 }

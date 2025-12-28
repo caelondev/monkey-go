@@ -9,12 +9,16 @@ type Lexer struct {
 	lastPosition    int
 	currentPosition int
 	currentChar     byte
+	line            uint
+	column          uint
 }
 
 func New(source string) *Lexer {
-	lexer := Lexer{source: source}
-
-	// Initialize first char
+	lexer := Lexer{
+		source: source,
+		line:   1,
+		column: 0,
+	}
 	lexer.readChar()
 	return &lexer
 }
@@ -22,64 +26,84 @@ func New(source string) *Lexer {
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
-	l.skipWhitespace()
-	l.skipComments()
+	for {
+		l.skipWhitespace()
+		if l.currentChar == '/' && (l.peekChar() == '/' || l.peekChar() == '*') {
+			l.skipComments()
+		} else {
+			break
+		}
+	}
+
+	// Capture position at START of token
+	startLine := l.line
+	startColumn := l.column
 
 	switch l.currentChar {
 	case ';':
-		tok = newToken(token.SEMICOLON, l.currentChar)
+		tok = l.newTokenWithPos(token.SEMICOLON, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '+':
-		tok = newToken(token.PLUS, l.currentChar)
+		tok = l.newTokenWithPos(token.PLUS, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '-':
-		tok = newToken(token.MINUS, l.currentChar)
+		tok = l.newTokenWithPos(token.MINUS, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '*':
-		tok = newToken(token.STAR, l.currentChar)
+		tok = l.newTokenWithPos(token.STAR, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '/':
-		tok = newToken(token.SLASH, l.currentChar)
+		tok = l.newTokenWithPos(token.SLASH, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '!':
-		tok = l.newCompound(token.BANG, token.NOT_EQUAL)
+		tok = l.newCompound(token.BANG, token.NOT_EQUAL, startLine, startColumn)
 		l.readChar()
 	case '=':
-		tok = l.newCompound(token.ASSIGNMENT, token.EQUAL)
+		tok = l.newCompound(token.ASSIGNMENT, token.EQUAL, startLine, startColumn)
 		l.readChar()
 	case '<':
-		tok = newToken(token.LESS, l.currentChar)
+		tok = l.newTokenWithPos(token.LESS, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '>':
-		tok = newToken(token.GREATER, l.currentChar)
+		tok = l.newTokenWithPos(token.GREATER, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case ',':
-		tok = newToken(token.COMMA, l.currentChar)
+		tok = l.newTokenWithPos(token.COMMA, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '(':
-		tok = newToken(token.LEFT_PARENTHESIS, l.currentChar)
+		tok = l.newTokenWithPos(token.LEFT_PARENTHESIS, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case ')':
-		tok = newToken(token.RIGHT_PARENTHESIS, l.currentChar)
+		tok = l.newTokenWithPos(token.RIGHT_PARENTHESIS, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '{':
-		tok = newToken(token.LEFT_BRACE, l.currentChar)
+		tok = l.newTokenWithPos(token.LEFT_BRACE, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case '}':
-		tok = newToken(token.RIGHT_BRACE, l.currentChar)
+		tok = l.newTokenWithPos(token.RIGHT_BRACE, l.currentChar, startLine, startColumn)
 		l.readChar()
 	case 0:
-		tok = token.Token{Type: token.EOF, Literal: ""}
+		tok = token.Token{Type: token.EOF, Literal: "EOF", Line: startLine, Column: startColumn}
 		l.readChar()
 	default:
 		if isLetter(l.currentChar) {
-			tok.Literal = l.readIdentifier()
-			tok.Type = token.LookupIdentifier(tok.Literal)
+			literal := l.readIdentifier()
+			tok = token.Token{
+				Type:    token.LookupIdentifier(literal),
+				Literal: literal,
+				Line:    startLine,
+				Column:  startColumn,
+			}
 		} else if isNumber(l.currentChar) {
-			tok.Literal = l.readNumber()
-			tok.Type = token.NUMBER
+			literal := l.readNumber()
+			tok = token.Token{
+				Type:    token.NUMBER,
+				Literal: literal,
+				Line:    startLine,
+				Column:  startColumn,
+			}
 		} else {
-			tok = newToken(token.ILLEGAL, l.currentChar)
+			tok = l.newTokenWithPos(token.ILLEGAL, l.currentChar, startLine, startColumn)
 			l.readChar()
 		}
 	}
@@ -89,57 +113,50 @@ func (l *Lexer) NextToken() token.Token {
 
 func (l *Lexer) readNumber() string {
 	start := l.lastPosition
-
 	for isNumber(l.currentChar) {
 		l.readChar()
 	}
-
 	return l.source[start:l.lastPosition]
 }
 
 func (l *Lexer) skipWhitespace() {
-	for l.currentChar == ' ' ||
-		l.currentChar == '\t' ||
-		l.currentChar == '\r' ||
-		l.currentChar == '\n' {
-		l.readChar()
+	for {
+		switch l.currentChar {
+		case ' ', '\r', '\t':
+			l.readChar()
+		case '\n':
+			l.readChar()
+		default:
+			return
+		}
 	}
 }
 
 func (l *Lexer) skipComments() {
 	if l.currentChar == '/' {
 		if l.peekChar() == '/' {
-			l.readChar() // Advance first '/'
-
+			l.readChar()
 			for !l.isAtEnd() && l.currentChar != '\n' {
 				l.readChar()
 			}
-
-			l.readChar() // Eat '\n'
-		} else if l.peekChar() == '*' { // Selective comment
-			l.readChar() // Eat '/'
-
+			l.readChar()
+		} else if l.peekChar() == '*' {
+			l.readChar()
 			for !l.isAtEnd() && !(l.currentChar == '*' && l.peekChar() == '/') {
 				l.readChar()
 			}
-
-			// Consume '*/'
 			l.readChar()
 			l.readChar()
 		}
 	}
-
-	// Skip whitespace after comment
 	l.skipWhitespace()
 }
 
 func (l *Lexer) readIdentifier() string {
 	start := l.lastPosition
-
-	for isLetter(l.currentChar) {
+	for isAlphanumeric(l.currentChar) {
 		l.readChar()
 	}
-
 	return l.source[start:l.lastPosition]
 }
 
@@ -147,47 +164,63 @@ func (l *Lexer) peekChar() byte {
 	if l.isAtEnd() {
 		return 0
 	}
-
 	return l.source[l.currentPosition]
 }
 
-// Advance
 func (l *Lexer) readChar() {
 	if l.isAtEnd() {
 		l.currentChar = 0
 	} else {
 		l.currentChar = l.source[l.currentPosition]
 	}
-
 	l.lastPosition = l.currentPosition
 	l.currentPosition++
+
+	// Track line and column
+	if l.currentChar == '\n' {
+		l.line++
+		l.column = 0
+	} else {
+		l.column++
+	}
 }
 
-func (l *Lexer) newCompound(regular, compound token.TokenType) token.Token {
+func (l *Lexer) newCompound(regular, compound token.TokenType, line, column uint) token.Token {
 	if l.peekChar() == '=' {
 		start := l.currentChar
 		l.readChar()
 		return token.Token{
 			Type:    compound,
 			Literal: string(start) + string(l.currentChar),
+			Line:    line,
+			Column:  column,
 		}
 	} else {
-		return newToken(regular, l.currentChar)
+		return l.newTokenWithPos(regular, l.currentChar, line, column)
 	}
 }
 
-func newToken(token_type token.TokenType, c byte) token.Token {
-	return token.Token{Type: token_type, Literal: string(c)}
+func (l *Lexer) newTokenWithPos(token_type token.TokenType, c byte, line, column uint) token.Token {
+	return token.Token{
+		Type:    token_type,
+		Literal: string(c),
+		Line:    line,
+		Column:  column,
+	}
 }
 
 func (l *Lexer) isAtEnd() bool {
 	return l.currentPosition >= len(l.source)
 }
 
+func isAlphanumeric(ch byte) bool {
+	return isLetter(ch) || isNumber(ch)
+}
+
 func isLetter(ch byte) bool {
-	return ('a' <= ch && 'z' >= ch) || ('A' <= ch && 'Z' >= ch) || ch == '_'
+	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
 }
 
 func isNumber(ch byte) bool {
-	return '0' <= ch && '9' >= ch
+	return '0' <= ch && ch <= '9'
 }

@@ -2,14 +2,14 @@ package ast
 
 import "github.com/caelondev/monkey/src/token"
 
-type LetStatement struct {
+type VarStatement struct {
 	Token token.Token // LET Token
 	Name  *Identifier
 	Value Expression
 }
 
-func (ls *LetStatement) statementNode() {}
-func (ls *LetStatement) TokenLiteral() string {
+func (ls *VarStatement) statementNode() {}
+func (ls *VarStatement) TokenLiteral() string {
 	return ls.Token.Literal
 }
 
@@ -31,4 +31,26 @@ type ExpressionStatement struct {
 func (es *ExpressionStatement) statementNode() {}
 func (es *ExpressionStatement) TokenLiteral() string {
 	return es.Token.Literal
+}
+
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (bs *BlockStatement) statementNode() {}
+func (bs *BlockStatement) TokenLiteral() string {
+	return bs.Token.Literal
+}
+
+type IfStatement struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence Statement
+	Alternative Statement
+}
+
+func (is *IfStatement) statementNode() {}
+func (is *IfStatement) TokenLiteral() string {
+	return is.Token.Literal
 }
