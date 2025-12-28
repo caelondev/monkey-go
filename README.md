@@ -13,9 +13,29 @@ monkey-go is an interpreter for the Monkey programming language, a fictional lan
 - Evaluation
 - Error handling
 
-1. Clone the repository: `git clone https:
-2. Navigate to the project directory: `cd monkey-go`
-3. Run the interpreter: `go run main.go`
+1. Clone the repository:
+
+```bash
+git clone https://github.com/caelondev/monkey-go
+```
+
+2. Navigate to the project directory: 
+
+```bash
+cd monkey-go
+```
+
+3. Install the binary
+
+```bash
+go build
+```
+
+4. Run the interpreter
+
+```bash
+./monkey-go
+```
 
 - Implementation based on Thorsten Ball's book: [Writing an Interpreter in Go](https://interpreterbook.com)
 
