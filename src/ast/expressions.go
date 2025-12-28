@@ -66,3 +66,14 @@ func (te *TernaryExpression) expressionNode() {}
 func (te *TernaryExpression) TokenLiteral() string {
 	return te.Token.Literal
 }
+
+type ClosureExpression struct {
+	Token      token.Token
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+func (ce *ClosureExpression) expressionNode() {}
+func (ce *ClosureExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}

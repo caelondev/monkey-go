@@ -10,7 +10,9 @@ import (
 
 func Main() {
 	src := `
-(19 + 24) / 12 if cond else helloworld;
+	fn(x, y, z, w) {
+		return 10;
+	}
 	`
 
 	l := lexer.New(src)

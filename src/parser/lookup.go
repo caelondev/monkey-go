@@ -72,5 +72,6 @@ func (p *Parser) createLookupTable() {
 	p.registerInfix(token.GREATER, p.parseBinaryExpression)
 
 	p.registerPrefix(token.LEFT_PARENTHESIS, p.parseGroupExpression)
-	p.registerInfix(token.IF, p.parseTernaryExpression) // Ternary
+	p.registerInfix(token.IF, p.parseTernaryExpression)
+	p.registerPrefix(token.FUNCTION, p.parseClosureExpression)
 }

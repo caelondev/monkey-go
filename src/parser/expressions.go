@@ -82,6 +82,54 @@ func (p *Parser) parseBooleanExpression() ast.Expression {
 	return &ast.BooleanExpression{Token: p.currentToken, Value: value}
 }
 
+func (p *Parser) parseClosureExpression() ast.Expression {
+	expr := &ast.ClosureExpression{Token: p.currentToken}
+
+	if !p.expectPeek(token.LEFT_PARENTHESIS) {
+		return nil
+	}
+
+	expr.Parameters = p.parseFunctionParameters()
+	if !p.expectPeek(token.LEFT_BRACE) {
+		return nil
+	}
+
+	expr.Body = p.parseBlockStatement()
+	return expr
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	idents := make([]*ast.Identifier, 0)
+
+	// Check if no args passed
+	if p.peekTokenIs(token.RIGHT_PARENTHESIS) {
+		p.nextToken() // Eat ( ---
+		return idents // Return empty
+	}
+
+	if !p.expectPeek(token.IDENTIFIER) {
+		return nil
+	}
+
+	firstParam := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+	idents = append(idents, firstParam)
+
+	// Will run every comma, and automatically
+	// jumps to it 
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // Eat first param 
+		if !p.expectPeek(token.IDENTIFIER) {
+				return nil
+		}
+
+		param := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+		idents = append(idents, param)
+	}
+
+	p.nextToken() // Eat Ident ---
+	return idents
+}
+
 /*
 * [ INFIX EXPRESSIONS ]
 **/
