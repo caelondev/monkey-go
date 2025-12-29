@@ -1,6 +1,10 @@
 package ast
 
-import "github.com/caelondev/monkey/src/token"
+import (
+	"bytes"
+
+	"github.com/caelondev/monkey/src/token"
+)
 
 type VarStatement struct {
 	Token token.Token // LET Token
@@ -8,9 +12,20 @@ type VarStatement struct {
 	Value Expression
 }
 
-func (ls *VarStatement) statementNode() {}
-func (ls *VarStatement) TokenLiteral() string {
-	return ls.Token.Literal
+func (vs *VarStatement) statementNode() {}
+func (vs *VarStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(vs.Token.Literal)
+	out.WriteString(" ")
+	out.WriteString(vs.Name.String())
+	out.WriteString(" = ")
+	out.WriteString(vs.Value.String())
+
+	return out.String()
+}
+func (vs *VarStatement) TokenLiteral() string {
+	return vs.Token.Literal
 }
 
 type ReturnStatement struct {
@@ -19,6 +34,18 @@ type ReturnStatement struct {
 }
 
 func (rs *ReturnStatement) statementNode() {}
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(rs.Token.Literal)
+
+	if rs.ReturnValue != nil {
+		out.WriteString(" ")
+		out.WriteString(rs.ReturnValue.String())
+	}
+
+	return out.String()
+}
 func (rs *ReturnStatement) TokenLiteral() string {
 	return rs.Token.Literal
 }
@@ -29,6 +56,15 @@ type ExpressionStatement struct {
 }
 
 func (es *ExpressionStatement) statementNode() {}
+func (es *ExpressionStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString(es.Expression.String())
+	out.WriteString(")")
+
+	return out.String()
+}
 func (es *ExpressionStatement) TokenLiteral() string {
 	return es.Token.Literal
 }
@@ -39,6 +75,17 @@ type BlockStatement struct {
 }
 
 func (bs *BlockStatement) statementNode() {}
+func (bs *BlockStatement) String() string {
+	var out bytes.Buffer
+
+	for _, stmt := range bs.Statements {
+		out.WriteString("\t")
+		out.WriteString(stmt.String())
+		out.WriteString(";\n")
+	}
+
+	return out.String()
+}
 func (bs *BlockStatement) TokenLiteral() string {
 	return bs.Token.Literal
 }
@@ -51,6 +98,24 @@ type IfStatement struct {
 }
 
 func (is *IfStatement) statementNode() {}
+func (is *IfStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(is.Token.Literal)
+	out.WriteString(" (")
+	out.WriteString(is.Condition.String())
+	out.WriteString(") {\n")
+	out.WriteString(is.Consequence.String())
+	out.WriteString("} ")
+
+	if is.Alternative != nil {
+		out.WriteString("else {\n")
+		out.WriteString(is.Alternative.String())
+		out.WriteString("}")
+	}
+
+	return out.String()
+}
 func (is *IfStatement) TokenLiteral() string {
 	return is.Token.Literal
 }

@@ -82,8 +82,8 @@ func (p *Parser) parseBooleanExpression() ast.Expression {
 	return &ast.BooleanExpression{Token: p.currentToken, Value: value}
 }
 
-func (p *Parser) parseClosureExpression() ast.Expression {
-	expr := &ast.ClosureExpression{Token: p.currentToken}
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	expr := &ast.FunctionLiteral{Token: p.currentToken}
 
 	if !p.expectPeek(token.LEFT_PARENTHESIS) {
 		return nil
@@ -96,38 +96,6 @@ func (p *Parser) parseClosureExpression() ast.Expression {
 
 	expr.Body = p.parseBlockStatement()
 	return expr
-}
-
-func (p *Parser) parseFunctionParameters() []*ast.Identifier {
-	idents := make([]*ast.Identifier, 0)
-
-	// Check if no args passed
-	if p.peekTokenIs(token.RIGHT_PARENTHESIS) {
-		p.nextToken() // Eat ( ---
-		return idents // Return empty
-	}
-
-	if !p.expectPeek(token.IDENTIFIER) {
-		return nil
-	}
-
-	firstParam := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
-	idents = append(idents, firstParam)
-
-	// Will run every comma, and automatically
-	// jumps to it 
-	for p.peekTokenIs(token.COMMA) {
-		p.nextToken() // Eat first param 
-		if !p.expectPeek(token.IDENTIFIER) {
-				return nil
-		}
-
-		param := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
-		idents = append(idents, param)
-	}
-
-	p.nextToken() // Eat Ident ---
-	return idents
 }
 
 /*
@@ -170,4 +138,78 @@ func (p *Parser) parseTernaryExpression(left ast.Expression) ast.Expression {
 	expr.Alternative = p.parseExpression(pre)
 
 	return expr
+}
+
+func (p *Parser) parseCallExpression(left ast.Expression) ast.Expression {
+	expr := &ast.CallExpression{Token: p.currentToken}
+	expr.Function = left
+	expr.Arguments = p.parseCallArguments()
+
+	return expr
+}
+
+/*
+* [ HELPERS ]
+**/
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	idents := make([]*ast.Identifier, 0)
+
+	// Check if no args passed
+	if p.peekTokenIs(token.RIGHT_PARENTHESIS) {
+		p.nextToken() // Eat ( ---
+		return idents // Return empty
+	}
+
+	if !p.expectPeek(token.IDENTIFIER) {
+		return nil
+	}
+
+	firstParam := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+	idents = append(idents, firstParam)
+
+	// Will run every comma, and automatically
+	// jumps to it
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // Eat first param
+		if !p.expectPeek(token.IDENTIFIER) {
+			return nil
+		}
+
+		param := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+		idents = append(idents, param)
+	}
+
+	p.nextToken() // Eat Ident ---
+	return idents
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := make([]ast.Expression, 0)
+
+	// Currently at ( ---
+
+	if p.peekTokenIs(token.RIGHT_PARENTHESIS) {
+		p.nextToken() // Advance ) ---
+		return args
+	}
+
+	// Eat ( ---
+	p.nextToken()
+	firstArg := p.parseExpression(LOWEST)
+	args = append(args, firstArg)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // Advance past Ident
+		p.nextToken() // Advance comma
+
+		arg := p.parseExpression(LOWEST)
+		args = append(args, arg)
+	}
+	
+	if !p.expectPeek(token.RIGHT_PARENTHESIS) {
+		return nil
+	}
+
+	return args
 }

@@ -1,32 +1,11 @@
 package src
 
 import (
-	"fmt"
+	"os"
 
-	"github.com/caelondev/monkey/src/lexer"
-	"github.com/caelondev/monkey/src/parser"
-	"github.com/sanity-io/litter"
+	"github.com/caelondev/monkey/src/repl"
 )
 
 func Main() {
-	src := `
-	fn(x, y, z, w) {
-		return 10;
-	}
-	`
-
-	l := lexer.New(src)
-	p := parser.New(l)
-
-	program := p.ParseProgram()
-
-	fmt.Printf("Got %d errors\n", len(p.Errors()))
-
-	if len(p.Errors()) > 0 {
-		for _, err := range p.Errors() {
-			fmt.Printf("Error: %s\n", err)
-		}
-	} else {
-		litter.Dump(program)
-	}
+	repl.Start(os.Stdin, os.Stdout)
 }
