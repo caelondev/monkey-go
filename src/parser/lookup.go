@@ -10,6 +10,7 @@ const (
 	COMPARISON
 	ADDITIVE
 	MULTIPLICATIVE
+	EXPONENTIATION
 	UNARY
 	CALL
 )
@@ -19,10 +20,13 @@ var precedence = map[token.TokenType]int{
 	token.NOT_EQUAL:        EQUALITY,
 	token.LESS:             COMPARISON,
 	token.GREATER:          COMPARISON,
+	token.LESS_EQUAL:       COMPARISON,
+	token.GREATER_EQUAL:    COMPARISON,
 	token.PLUS:             ADDITIVE,
 	token.MINUS:            ADDITIVE,
 	token.STAR:             MULTIPLICATIVE,
 	token.SLASH:            MULTIPLICATIVE,
+	token.CARET:            EXPONENTIATION,
 	token.LEFT_PARENTHESIS: CALL,
 	token.IF:               TERNARY,
 }
@@ -60,6 +64,8 @@ func (p *Parser) createLookupTable() {
 	p.registerPrefix(token.MINUS, p.parseUnaryExpression)
 
 	p.registerPrefix(token.NIL, p.parseNilLiteral)
+	p.registerPrefix(token.NOT_A_NUMBER, p.parseNaNLiteral)
+	p.registerPrefix(token.INFINITY, p.parseInfinityLiteral)
 	p.registerPrefix(token.TRUE, p.parseBooleanExpression)
 	p.registerPrefix(token.FALSE, p.parseBooleanExpression)
 
@@ -67,11 +73,14 @@ func (p *Parser) createLookupTable() {
 	p.registerInfix(token.MINUS, p.parseBinaryExpression)
 	p.registerInfix(token.SLASH, p.parseBinaryExpression)
 	p.registerInfix(token.STAR, p.parseBinaryExpression)
+	p.registerInfix(token.CARET, p.parseExponentExpression)
 
 	p.registerInfix(token.EQUAL, p.parseBinaryExpression)
 	p.registerInfix(token.NOT_EQUAL, p.parseBinaryExpression)
 	p.registerInfix(token.LESS, p.parseBinaryExpression)
 	p.registerInfix(token.GREATER, p.parseBinaryExpression)
+	p.registerInfix(token.LESS_EQUAL, p.parseBinaryExpression)
+	p.registerInfix(token.GREATER_EQUAL, p.parseBinaryExpression)
 
 	p.registerPrefix(token.LEFT_PARENTHESIS, p.parseGroupExpression)
 	p.registerInfix(token.IF, p.parseTernaryExpression)

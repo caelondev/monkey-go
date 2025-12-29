@@ -43,6 +43,9 @@ func (l *Lexer) NextToken() token.Token {
 	case ';':
 		tok = l.newTokenWithPos(token.SEMICOLON, l.currentChar, startLine, startColumn)
 		l.readChar()
+	case '^':
+		tok = l.newTokenWithPos(token.CARET, l.currentChar, startLine, startColumn)
+		l.readChar()
 	case '+':
 		tok = l.newTokenWithPos(token.PLUS, l.currentChar, startLine, startColumn)
 		l.readChar()
@@ -62,10 +65,10 @@ func (l *Lexer) NextToken() token.Token {
 		tok = l.newCompound(token.ASSIGNMENT, token.EQUAL, startLine, startColumn)
 		l.readChar()
 	case '<':
-		tok = l.newTokenWithPos(token.LESS, l.currentChar, startLine, startColumn)
+		tok = l.newCompound(token.LESS, token.LESS_EQUAL, startLine, startColumn)
 		l.readChar()
 	case '>':
-		tok = l.newTokenWithPos(token.GREATER, l.currentChar, startLine, startColumn)
+		tok = l.newCompound(token.GREATER, token.GREATER_EQUAL, startLine, startColumn)
 		l.readChar()
 	case ',':
 		tok = l.newTokenWithPos(token.COMMA, l.currentChar, startLine, startColumn)

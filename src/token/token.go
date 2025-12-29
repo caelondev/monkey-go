@@ -24,9 +24,12 @@ const (
 	BANG       = "!"
 	STAR       = "*"
 	SLASH      = "/"
+	CARET      = "^"
 
-	LESS    = "<"
-	GREATER = ">"
+	LESS          = "<"
+	GREATER       = ">"
+	LESS_EQUAL    = "<="
+	GREATER_EQUAL = ">="
 
 	// Delimiters
 	COMMA     = ","
@@ -42,14 +45,16 @@ const (
 	NOT_EQUAL = "!="
 
 	// Reserved keywords
-	FUNCTION = "FUNCTION"
-	VAR      = "VAR"
-	TRUE     = "TRUE"
-	FALSE    = "FALSE"
-	IF       = "IF"
-	ELSE     = "ELSE"
-	RETURN   = "RETURN"
-	NIL      = "NIL"
+	FUNCTION     = "FUNCTION"
+	VAR          = "VAR"
+	TRUE         = "TRUE"
+	FALSE        = "FALSE"
+	IF           = "IF"
+	ELSE         = "ELSE"
+	RETURN       = "RETURN"
+	NIL          = "NIL"
+	INFINITY     = "INFINITY"
+	NOT_A_NUMBER = "NOT_A_NUMBER"
 )
 
 var reservedKeywords = map[string]TokenType{
@@ -61,6 +66,8 @@ var reservedKeywords = map[string]TokenType{
 	"else":   ELSE,
 	"return": RETURN,
 	"nil":    NIL,
+	"Inf":    INFINITY,
+	"NaN":    NOT_A_NUMBER,
 }
 
 func LookupIdentifier(ident string) TokenType {

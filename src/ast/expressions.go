@@ -261,3 +261,52 @@ func (ce *CallExpression) String() string {
 func (ce *CallExpression) TokenLiteral() string {
 	return ce.Token.Literal
 }
+
+// ---------------- NaNLiteral ----------------
+type NaNLiteral struct {
+	Token token.Token
+}
+
+func (n *NaNLiteral) GetLine() uint {
+	return n.Token.Line
+}
+func (n *NaNLiteral) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *NaNLiteral) expressionNode() {}
+func (n *NaNLiteral) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString("NaN")
+	out.WriteString(")")
+	return out.String()
+}
+func (n *NaNLiteral) TokenLiteral() string {
+	return n.Token.Literal
+}
+
+// ---------------- InfinityLiteral ----------------
+type InfinityLiteral struct {
+	Token token.Token
+	Sign  int // -1 +1 ---
+}
+
+func (n *InfinityLiteral) GetLine() uint {
+	return n.Token.Line
+}
+func (n *InfinityLiteral) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *InfinityLiteral) expressionNode() {}
+func (n *InfinityLiteral) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	out.WriteString("inf")
+	out.WriteString(")")
+	return out.String()
+}
+func (n *InfinityLiteral) TokenLiteral() string {
+	return n.Token.Literal
+}

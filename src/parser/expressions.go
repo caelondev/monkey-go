@@ -101,6 +101,13 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 func (p *Parser) parseNilLiteral() ast.Expression {
 	return &ast.NilLiteral{Token: p.currentToken}
 }
+func (p *Parser) parseInfinityLiteral() ast.Expression {
+	return &ast.InfinityLiteral{Token: p.currentToken, Sign: 1}
+}
+
+func (p *Parser) parseNaNLiteral() ast.Expression {
+	return &ast.NaNLiteral{Token: p.currentToken}
+}
 
 /*
 * [ INFIX EXPRESSIONS ]
@@ -148,6 +155,17 @@ func (p *Parser) parseCallExpression(left ast.Expression) ast.Expression {
 	expr := &ast.CallExpression{Token: p.currentToken}
 	expr.Function = left
 	expr.Arguments = p.parseCallArguments()
+
+	return expr
+}
+
+func (p *Parser) parseExponentExpression(left ast.Expression) ast.Expression {
+	expr := &ast.BinaryExpression{Token: p.currentToken, Operator: p.currentToken, Left: left}
+
+	// Right associative parsing
+	pre := p.currentPrecedence() - 1
+	p.nextToken() // Eat CARET
+	expr.Right = p.parseExpression(pre)
 
 	return expr
 }

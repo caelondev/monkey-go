@@ -5,9 +5,11 @@ import "fmt"
 type ObjectType string
 
 const (
-	NUMBER_OBJECT  = "NUMBER"
-	BOOLEAN_OBJECT = "BOOLEAN"
-	NIL_OBJECT     = "NIL"
+	NUMBER_OBJECT   = "NUMBER"
+	BOOLEAN_OBJECT  = "BOOLEAN"
+	NIL_OBJECT      = "NIL"
+	NAN_OBJECT      = "NAN"
+	INFINITY_OBJECT = "INFINITY"
 )
 
 type Object interface {
@@ -42,9 +44,35 @@ func (o *Boolean) Inspect() string {
 type Nil struct{}
 
 func (o *Nil) Type() ObjectType {
-	return NUMBER_OBJECT
+	return NIL_OBJECT
 }
 
 func (o *Nil) Inspect() string {
 	return "nil"
+}
+
+type NaN struct{}
+
+func (o *NaN) Type() ObjectType {
+	return NAN_OBJECT
+}
+
+func (o *NaN) Inspect() string {
+	return "NotANumber"
+}
+
+type Infinity struct {
+	Sign int
+}
+
+func (o *Infinity) Type() ObjectType {
+	return INFINITY_OBJECT
+}
+
+func (o *Infinity) Inspect() string {
+	if o.Sign > 0 {
+		return "Infinity++"
+	}
+
+	return "Infinity--"
 }
