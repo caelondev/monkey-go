@@ -33,6 +33,9 @@ func isTruthy(obj object.Object) bool {
 	case *object.Number:
 		return obj.Value != 0
 
+	case *object.NaN:
+		return false
+
 	default:
 		return true
 	}
