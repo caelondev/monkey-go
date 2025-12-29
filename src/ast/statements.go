@@ -7,8 +7,8 @@ import (
 )
 
 type VarStatement struct {
-	Token token.Token // LET Token
-	Name  *Identifier
+	Token token.Token   // LET Token
+	Names []*Identifier // All names will receive same value
 	Value Expression
 }
 
@@ -18,7 +18,16 @@ func (vs *VarStatement) String() string {
 
 	out.WriteString(vs.Token.Literal)
 	out.WriteString(" ")
-	out.WriteString(vs.Name.String())
+
+	if len(vs.Names) > 1 {
+		for i := range len(vs.Names) - 1 {
+			out.WriteString(vs.Names[i].String())
+			out.WriteString(", ")
+		}
+	}
+
+	out.WriteString(vs.Names[len(vs.Names)-1].String())
+
 	out.WriteString(" = ")
 	out.WriteString(vs.Value.String())
 

@@ -98,6 +98,10 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	return expr
 }
 
+func (p *Parser) parseNilLiteral() ast.Expression {
+	return &ast.NilLiteral{Token: p.currentToken}
+}
+
 /*
 * [ INFIX EXPRESSIONS ]
 **/
@@ -206,7 +210,7 @@ func (p *Parser) parseCallArguments() []ast.Expression {
 		arg := p.parseExpression(LOWEST)
 		args = append(args, arg)
 	}
-	
+
 	if !p.expectPeek(token.RIGHT_PARENTHESIS) {
 		return nil
 	}

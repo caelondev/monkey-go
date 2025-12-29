@@ -25,6 +25,24 @@ func (n *NumberLiteral) TokenLiteral() string {
 	return n.Token.Literal
 }
 
+type NilLiteral struct {
+	Token token.Token
+}
+
+func (n *NilLiteral) expressionNode() {}
+func (n *NilLiteral) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("(")
+	out.WriteString("nil")
+	out.WriteString(")")
+
+	return out.String()
+}
+func (n *NilLiteral) TokenLiteral() string {
+	return n.Token.Literal
+}
+
 type Identifier struct {
 	Token token.Token // IDENTIFIER Token
 	Value string

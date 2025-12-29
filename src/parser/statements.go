@@ -33,7 +33,13 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseVarStatement() *ast.VarStatement {
 	// SYNTAX ---
 	//
+	// Null Vals
+	// var <Identifier>;
+	// var <Identifier>, <Identifier>;
+	//
+	// Null Vals
 	// var <Identifier> = <expr>;
+	// var <Identifier>, <Identifier> = <expr>;
 	//
 
 	stmt := &ast.VarStatement{Token: p.currentToken}
@@ -42,14 +48,33 @@ func (p *Parser) parseVarStatement() *ast.VarStatement {
 		return nil
 	}
 
-	stmt.Name = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+	// First var
+	stmt.Names = append(stmt.Names, &ast.Identifier{
+		Token: p.currentToken,
+		Value: p.currentToken.Literal,
+	})
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // Eat Identifier
+		p.nextToken() // Eat comma
+
+		stmt.Names = append(stmt.Names, &ast.Identifier{
+			Token: p.currentToken,
+			Value: p.currentToken.Literal,
+		})
+	}
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken() // Eat last var name
+		stmt.Value = &ast.NilLiteral{Token: p.currentToken}
+		return stmt
+	}
 
 	if !p.expectPeek(token.ASSIGNMENT) {
 		return nil
 	}
 
-	p.nextToken() // ASSIGNMENT shifts to current
-	// so just advance here
+	p.nextToken() // Advance ASSIGNMENT
 
 	stmt.Value = p.parseExpression(LOWEST)
 

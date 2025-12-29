@@ -25,7 +25,9 @@ func Start(in io.Reader, out io.Writer) {
 		p := parser.New(l)
 
 		program := p.ParseProgram()
+
 		if len(p.Errors()) != 0 {
+			io.WriteString(out, "An error occured whilst parsing:\n")
 			printParserErrors(out, p.Errors())
 			io.WriteString(out, "\n")
 			continue

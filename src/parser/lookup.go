@@ -58,6 +58,8 @@ func (p *Parser) createLookupTable() {
 	p.registerPrefix(token.NUMBER, p.parseNumberExpression)
 	p.registerPrefix(token.BANG, p.parseUnaryExpression)
 	p.registerPrefix(token.MINUS, p.parseUnaryExpression)
+
+	p.registerPrefix(token.NIL, p.parseNilLiteral)
 	p.registerPrefix(token.TRUE, p.parseBooleanExpression)
 	p.registerPrefix(token.FALSE, p.parseBooleanExpression)
 
