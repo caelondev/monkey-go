@@ -6,83 +6,108 @@ import (
 	"github.com/caelondev/monkey/src/token"
 )
 
+// ---------------- NumberLiteral ----------------
 type NumberLiteral struct {
 	Token token.Token
 	Value float64
 }
 
+func (n *NumberLiteral) GetLine() uint {
+	return n.Token.Line
+}
+func (n *NumberLiteral) GetColumn() uint {
+	return n.Token.Column
+}
+
 func (n *NumberLiteral) expressionNode() {}
 func (n *NumberLiteral) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(n.Token.Literal)
 	out.WriteString(")")
-
 	return out.String()
 }
 func (n *NumberLiteral) TokenLiteral() string {
 	return n.Token.Literal
 }
 
+// ---------------- NilLiteral ----------------
 type NilLiteral struct {
 	Token token.Token
+}
+
+func (n *NilLiteral) GetLine() uint {
+	return n.Token.Line
+}
+func (n *NilLiteral) GetColumn() uint {
+	return n.Token.Column
 }
 
 func (n *NilLiteral) expressionNode() {}
 func (n *NilLiteral) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString("nil")
 	out.WriteString(")")
-
 	return out.String()
 }
 func (n *NilLiteral) TokenLiteral() string {
 	return n.Token.Literal
 }
 
+// ---------------- Identifier ----------------
 type Identifier struct {
-	Token token.Token // IDENTIFIER Token
+	Token token.Token
 	Value string
+}
+
+func (i *Identifier) GetLine() uint {
+	return i.Token.Line
+}
+func (i *Identifier) GetColumn() uint {
+	return i.Token.Column
 }
 
 func (i *Identifier) expressionNode() {}
 func (i *Identifier) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(i.Value)
 	out.WriteString(")")
-
 	return out.String()
 }
 func (i *Identifier) TokenLiteral() string {
 	return i.Token.Literal
 }
 
+// ---------------- UnaryExpression ----------------
 type UnaryExpression struct {
 	Token    token.Token
 	Operator token.Token
 	Right    Expression
 }
 
+func (ue *UnaryExpression) GetLine() uint {
+	return ue.Token.Line
+}
+func (ue *UnaryExpression) GetColumn() uint {
+	return ue.Token.Column
+}
+
 func (ue *UnaryExpression) expressionNode() {}
 func (ue *UnaryExpression) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(ue.Operator.Literal)
 	out.WriteString(ue.Right.String())
 	out.WriteString(")")
-
 	return out.String()
 }
 func (ue *UnaryExpression) TokenLiteral() string {
 	return ue.Token.Literal
 }
 
+// ---------------- BinaryExpression ----------------
 type BinaryExpression struct {
 	Token    token.Token
 	Left     Expression
@@ -90,41 +115,53 @@ type BinaryExpression struct {
 	Right    Expression
 }
 
+func (be *BinaryExpression) GetLine() uint {
+	return be.Token.Line
+}
+func (be *BinaryExpression) GetColumn() uint {
+	return be.Token.Column
+}
+
 func (be *BinaryExpression) expressionNode() {}
 func (be *BinaryExpression) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(be.Left.String())
 	out.WriteString(be.Operator.Literal)
 	out.WriteString(be.Right.String())
 	out.WriteString(")")
-
 	return out.String()
 }
 func (be *BinaryExpression) TokenLiteral() string {
 	return be.Token.Literal
 }
 
+// ---------------- BooleanExpression ----------------
 type BooleanExpression struct {
 	Token token.Token
 	Value bool
 }
 
+func (be *BooleanExpression) GetLine() uint {
+	return be.Token.Line
+}
+func (be *BooleanExpression) GetColumn() uint {
+	return be.Token.Column
+}
+
 func (be *BooleanExpression) expressionNode() {}
 func (be *BooleanExpression) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(be.Token.Literal)
 	out.WriteString(")")
-
 	return out.String()
 }
 func (be *BooleanExpression) TokenLiteral() string {
 	return be.Token.Literal
 }
 
+// ---------------- TernaryExpression ----------------
 type TernaryExpression struct {
 	Token       token.Token
 	Condition   Expression
@@ -132,10 +169,16 @@ type TernaryExpression struct {
 	Alternative Expression
 }
 
+func (te *TernaryExpression) GetLine() uint {
+	return te.Token.Line
+}
+func (te *TernaryExpression) GetColumn() uint {
+	return te.Token.Column
+}
+
 func (te *TernaryExpression) expressionNode() {}
 func (te *TernaryExpression) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(te.Consequence.String())
 	out.WriteString(" if ")
@@ -143,69 +186,76 @@ func (te *TernaryExpression) String() string {
 	out.WriteString(" else ")
 	out.WriteString(te.Alternative.String())
 	out.WriteString(")")
-
 	return out.String()
 }
 func (te *TernaryExpression) TokenLiteral() string {
 	return te.Token.Literal
 }
 
+// ---------------- FunctionLiteral ----------------
 type FunctionLiteral struct {
 	Token      token.Token
 	Parameters []*Identifier
 	Body       *BlockStatement
 }
 
+func (fl *FunctionLiteral) GetLine() uint {
+	return fl.Token.Line
+}
+func (fl *FunctionLiteral) GetColumn() uint {
+	return fl.Token.Column
+}
+
 func (fl *FunctionLiteral) expressionNode() {}
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(fl.Token.Literal)
 	out.WriteString("(")
-
 	for i, param := range fl.Parameters {
 		if i > 0 {
 			out.WriteString(", ")
 		}
 		out.WriteString(param.String())
 	}
-
 	out.WriteString(") ")
 	out.WriteString("{\n")
 	out.WriteString(fl.Body.String())
 	out.WriteString("}")
 	out.WriteString(")")
-
 	return out.String()
 }
 func (fl *FunctionLiteral) TokenLiteral() string {
 	return fl.Token.Literal
 }
 
+// ---------------- CallExpression ----------------
 type CallExpression struct {
 	Token     token.Token
 	Function  Expression
 	Arguments []Expression
 }
 
+func (ce *CallExpression) GetLine() uint {
+	return ce.Token.Line
+}
+func (ce *CallExpression) GetColumn() uint {
+	return ce.Token.Column
+}
+
 func (ce *CallExpression) expressionNode() {}
 func (ce *CallExpression) String() string {
 	var out bytes.Buffer
-
 	out.WriteString("(")
 	out.WriteString(ce.Function.String())
 	out.WriteString("(")
-
 	for i, arg := range ce.Arguments {
 		if i > 0 {
 			out.WriteString(", ")
 		}
 		out.WriteString(arg.String())
 	}
-
 	out.WriteString("))")
-
 	return out.String()
 }
 func (ce *CallExpression) TokenLiteral() string {

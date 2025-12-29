@@ -4,6 +4,8 @@ import "bytes"
 
 type Node interface {
 	String() string
+	GetLine() uint
+	GetColumn() uint
 	TokenLiteral() string
 }
 
@@ -38,4 +40,12 @@ func (p *Program) String() string {
 	}
 
 	return out.String()
+}
+
+func (p *Program) GetLine() uint {
+	return 0
+}
+
+func (p *Program) GetColumn() uint {
+	return 0
 }
