@@ -5,11 +5,12 @@ import "fmt"
 type ObjectType string
 
 const (
-	NUMBER_OBJECT   = "NUMBER"
-	BOOLEAN_OBJECT  = "BOOLEAN"
-	NIL_OBJECT      = "NIL"
-	NAN_OBJECT      = "NAN"
-	INFINITY_OBJECT = "INFINITY"
+	NUMBER_OBJECT       = "NUMBER"
+	BOOLEAN_OBJECT      = "BOOLEAN"
+	NIL_OBJECT          = "NIL"
+	NAN_OBJECT          = "NAN"
+	INFINITY_OBJECT     = "INFINITY"
+	RETURN_VALUE_OBJECT = "RETURN_VALUE"
 )
 
 type Object interface {
@@ -75,4 +76,16 @@ func (o *Infinity) Inspect() string {
 	}
 
 	return "Infinity--"
+}
+
+type ReturnValue struct {
+	Value Object
+}
+
+func (o *ReturnValue) Type() ObjectType {
+	return RETURN_VALUE_OBJECT
+}
+
+func (o *ReturnValue) Inspect() string {
+	return fmt.Sprintf("return { %s }", o.Value.Inspect())
 }

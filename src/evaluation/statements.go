@@ -5,6 +5,20 @@ import (
 	"github.com/caelondev/monkey/src/object"
 )
 
+func (e *Evaluator) evaluateBlockStatement(node *ast.BlockStatement) object.Object {
+	var lastEvaluated object.Object
+
+	for _, stmt := range node.Statements {
+		lastEvaluated = e.Evaluate(stmt)
+
+		if lastEvaluated != nil && lastEvaluated.Type() == object.RETURN_VALUE_OBJECT {
+			return lastEvaluated
+		}
+	}
+
+	return lastEvaluated
+}
+
 func (e *Evaluator) evaluateIfStatement(condition object.Object, node *ast.IfStatement) object.Object {
 	if isTruthy(condition) {
 		return e.Evaluate(node.Consequence)

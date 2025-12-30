@@ -21,7 +21,7 @@ func (e *Evaluator) Evaluate(node ast.Node) object.Object {
 
 	switch node := node.(type) {
 	case *ast.Program:
-		return e.evaluateStatements(node.Statements)
+		return e.evaluateProgram(node.Statements)
 	case *ast.NumberLiteral:
 		return &object.Number{Value: node.Value}
 	case *ast.NilLiteral:
@@ -45,10 +45,18 @@ func (e *Evaluator) Evaluate(node ast.Node) object.Object {
 	case *ast.ExpressionStatement:
 		return e.Evaluate(node.Expression)
 	case *ast.BlockStatement:
-		return e.evaluateStatements(node.Statements)
+		return e.evaluateBlockStatement(node)
 	case *ast.IfStatement:
 		condition := e.Evaluate(node.Condition)
 		return e.evaluateIfStatement(condition, node)
+	case *ast.ReturnStatement:
+		// TODO: I feel like we can make this cleaner ---
+		if node.ReturnValue == nil {
+			return &object.ReturnValue{Value: NIL}
+		}
+
+		value := e.Evaluate(node.ReturnValue)
+		return &object.ReturnValue{Value: value}
 
 	default:
 		println("Unrecognized AST node:\n")
@@ -57,11 +65,16 @@ func (e *Evaluator) Evaluate(node ast.Node) object.Object {
 	}
 }
 
-func (e *Evaluator) evaluateStatements(statements []ast.Statement) object.Object {
+func (e *Evaluator) evaluateProgram(statements []ast.Statement) object.Object {
 	var lastEval object.Object
 
 	for _, stmt := range statements {
 		lastEval = e.Evaluate(stmt)
+
+		// Bubbles up and breaks when it see a return statement
+		if returnValue, ok := lastEval.(*object.ReturnValue); ok {
+			return returnValue.Value
+		}
 	}
 
 	return lastEval
