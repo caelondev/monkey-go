@@ -11,24 +11,37 @@ func (e *Evaluator) evaluateBlockStatement(node *ast.BlockStatement) object.Obje
 	for _, stmt := range node.Statements {
 		lastEvaluated = e.Evaluate(stmt)
 
-		if lastEvaluated != nil && lastEvaluated.Type() == object.RETURN_VALUE_OBJECT {
-			return lastEvaluated
+		if lastEvaluated != nil {
+			if lastEvaluated.Type() == object.RETURN_VALUE_OBJECT || lastEvaluated.Type() == object.ERROR_OBJECT {
+				return lastEvaluated
+			}
 		}
 	}
 
 	return lastEvaluated
 }
 
-func (e *Evaluator) evaluateIfStatement(condition object.Object, node *ast.IfStatement) object.Object {
+func (e *Evaluator) evaluateIfStatement(node *ast.IfStatement, condition object.Object) object.Object {
+	if isError(condition) {
+		return condition
+	}
+
 	if isTruthy(condition) {
 		return e.Evaluate(node.Consequence)
 	} else {
+		if node.Alternative == nil {
+			return NIL
+		}
+
 		return e.Evaluate(node.Alternative)
 	}
 }
 
-// TODO: Use if statement for ternary???
-func (e *Evaluator) evaluateTernaryExpression(condition object.Object, node *ast.TernaryExpression) object.Object {
+func (e *Evaluator) evaluateTernaryExpression(node *ast.TernaryExpression, condition object.Object) object.Object {
+	if isError(condition) {
+		return condition
+	}
+
 	if isTruthy(condition) {
 		return e.Evaluate(node.Consequence)
 	} else {

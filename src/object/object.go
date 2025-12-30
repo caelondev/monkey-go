@@ -11,6 +11,7 @@ const (
 	NAN_OBJECT          = "NAN"
 	INFINITY_OBJECT     = "INFINITY"
 	RETURN_VALUE_OBJECT = "RETURN_VALUE"
+	ERROR_OBJECT        = "ERROR"
 )
 
 type Object interface {
@@ -88,4 +89,16 @@ func (o *ReturnValue) Type() ObjectType {
 
 func (o *ReturnValue) Inspect() string {
 	return fmt.Sprintf("return { %s }", o.Value.Inspect())
+}
+
+type Error struct {
+	Message string
+}
+
+func (o *Error) Type() ObjectType {
+	return ERROR_OBJECT
+}
+
+func (o *Error) Inspect() string {
+	return o.Message
 }

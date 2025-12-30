@@ -3,6 +3,7 @@ package evaluation
 import (
 	"math"
 
+	"github.com/caelondev/monkey/src/ast"
 	"github.com/caelondev/monkey/src/object"
 	"github.com/caelondev/monkey/src/token"
 )
@@ -23,18 +24,23 @@ func (e *Evaluator) evaluateToObjectBoolean(v bool) *object.Boolean {
 	return FALSE
 }
 
-func (e *Evaluator) evaluateUnaryExpression(op token.TokenType, right object.Object) object.Object {
-	switch op {
+func (e *Evaluator) evaluateUnaryExpression(node *ast.UnaryExpression, right object.Object) object.Object {
+	switch node.Operator.Type {
 	case token.BANG:
 		return e.evaluateNotExpression(right)
 	case token.MINUS:
-		return e.evaluateNegationExpression(right)
+		return e.evaluateNegationExpression(node, right)
 	default:
-		return NIL
+		return e.throwErr(
+			node,
+			"This error occurs when an unregistered unary operator was used.\nThis should only appear during language development.",
+			"Unknown unary operator: '%v'",
+			node.Operator.Type,
+		)
 	}
 }
 
-func (e *Evaluator) evaluateNegationExpression(right object.Object) object.Object {
+func (e *Evaluator) evaluateNegationExpression(node *ast.UnaryExpression, right object.Object) object.Object {
 	switch obj := right.(type) {
 	case *object.Infinity:
 		return infinityWithSign(-obj.Sign)
@@ -43,7 +49,11 @@ func (e *Evaluator) evaluateNegationExpression(right object.Object) object.Objec
 	case *object.NaN:
 		return NAN
 	default:
-		return NAN
+		return e.throwErr(
+			node,
+			"This error occurs when you try to negate a non-number value.",
+			"Cannot negate operand of type '%v'", right.Type(),
+		)
 	}
 }
 
@@ -55,11 +65,12 @@ func (e *Evaluator) evaluateNotExpression(right object.Object) object.Object {
 }
 
 func (e *Evaluator) evaluateBinaryExpression(
-	op token.TokenType,
+	node *ast.BinaryExpression,
 	left, right object.Object,
 ) object.Object {
+	// Handle NaN operands ---
 	if left.Type() == object.NAN_OBJECT || right.Type() == object.NAN_OBJECT {
-		switch op {
+		switch node.Operator.Type {
 		case token.EQUAL, token.LESS, token.GREATER, token.LESS_EQUAL, token.GREATER_EQUAL:
 			return FALSE
 		case token.NOT_EQUAL:
@@ -71,31 +82,37 @@ func (e *Evaluator) evaluateBinaryExpression(
 
 	switch {
 	case left.Type() == object.INFINITY_OBJECT && right.Type() == object.INFINITY_OBJECT:
-		return evalInfInf(op, left.(*object.Infinity), right.(*object.Infinity))
+		return evalInfInf(node.Operator.Type, left.(*object.Infinity), right.(*object.Infinity))
 
 	case left.Type() == object.INFINITY_OBJECT && right.Type() == object.NUMBER_OBJECT:
-		return evalInfNum(op, left.(*object.Infinity), right.(*object.Number))
+		return evalInfNum(node.Operator.Type, left.(*object.Infinity), right.(*object.Number))
 
 	case left.Type() == object.NUMBER_OBJECT && right.Type() == object.INFINITY_OBJECT:
-		return evalNumInf(op, left.(*object.Number), right.(*object.Infinity))
+		return evalNumInf(node.Operator.Type, left.(*object.Number), right.(*object.Infinity))
 
 	case left.Type() == object.NUMBER_OBJECT && right.Type() == object.NUMBER_OBJECT:
-		return e.evaluateNumericBinaryExpression(op, left, right)
+		return e.evaluateNumericBinaryExpression(node, left, right)
 	}
 
-	return NIL
+	return e.throwErr(
+		node,
+		"This error occurs when the operands don't share the same type or cannot be used together to perform arithmetic.",
+		"Cannot perform `%v %v %v` as they are an invalid operand combination",
+		left.Type(),
+		node.Operator.Type,
+		right.Type(),
+	)
 }
 
 func (e *Evaluator) evaluateNumericBinaryExpression(
-	op token.TokenType,
+	node *ast.BinaryExpression,
 	left, right object.Object,
 ) object.Object {
-
 	l := left.(*object.Number).Value
 	r := right.(*object.Number).Value
 	var result float64
 
-	switch op {
+	switch node.Operator.Type {
 	case token.PLUS:
 		result = l + r
 	case token.MINUS:
@@ -119,12 +136,19 @@ func (e *Evaluator) evaluateNumericBinaryExpression(
 		return e.evaluateToObjectBoolean(l == r)
 	case token.NOT_EQUAL:
 		return e.evaluateToObjectBoolean(l != r)
+
+	default:
+		return e.throwErr(
+			node,
+			"This error occurs when an unregistered binary operator is used.\nThis should only appear during language development.",
+			"Unknown binary operator: '%v'",
+			node.Operator.Type,
+		)
 	}
 
 	if math.IsNaN(result) {
 		return NAN
 	}
-
 	if math.IsInf(result, 1) {
 		return INFINITY
 	}

@@ -1,6 +1,10 @@
+// evaluator.go
 package evaluation
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/caelondev/monkey/src/ast"
 	"github.com/caelondev/monkey/src/object"
 	"github.com/sanity-io/litter"
@@ -9,10 +13,13 @@ import (
 type Evaluator struct {
 	line   uint
 	column uint
+	lines  []string
 }
 
-func New() Evaluator {
-	return Evaluator{}
+func New(source string) Evaluator {
+	return Evaluator{
+		lines: strings.Split(source, "\n"),
+	}
 }
 
 func (e *Evaluator) Evaluate(node ast.Node) object.Object {
@@ -34,27 +41,37 @@ func (e *Evaluator) Evaluate(node ast.Node) object.Object {
 		return e.evaluateToObjectBoolean(node.Value)
 	case *ast.UnaryExpression:
 		right := e.Evaluate(node.Right)
-		return e.evaluateUnaryExpression(node.Operator.Type, right)
+		if isError(right) {
+			return right
+		}
+		return e.evaluateUnaryExpression(node, right)
 	case *ast.BinaryExpression:
 		left := e.Evaluate(node.Left)
+		if isError(left) {
+			return left
+		}
 		right := e.Evaluate(node.Right)
-		return e.evaluateBinaryExpression(node.Operator.Type, left, right)
+		if isError(right) {
+			return right
+		}
+		return e.evaluateBinaryExpression(node, left, right)
 	case *ast.TernaryExpression:
 		condition := e.Evaluate(node.Condition)
-		return e.evaluateTernaryExpression(condition, node)
+		if isError(condition) {
+			return condition
+		}
+		return e.evaluateTernaryExpression(node, condition)
 	case *ast.ExpressionStatement:
 		return e.Evaluate(node.Expression)
 	case *ast.BlockStatement:
 		return e.evaluateBlockStatement(node)
 	case *ast.IfStatement:
 		condition := e.Evaluate(node.Condition)
-		return e.evaluateIfStatement(condition, node)
+		return e.evaluateIfStatement(node, condition)
 	case *ast.ReturnStatement:
-		// TODO: I feel like we can make this cleaner ---
 		if node.ReturnValue == nil {
 			return &object.ReturnValue{Value: NIL}
 		}
-
 		value := e.Evaluate(node.ReturnValue)
 		return &object.ReturnValue{Value: value}
 
@@ -71,11 +88,48 @@ func (e *Evaluator) evaluateProgram(statements []ast.Statement) object.Object {
 	for _, stmt := range statements {
 		lastEval = e.Evaluate(stmt)
 
-		// Bubbles up and breaks when it see a return statement
-		if returnValue, ok := lastEval.(*object.ReturnValue); ok {
-			return returnValue.Value
+		switch result := lastEval.(type) {
+		case *object.ReturnValue:
+			return result.Value
+		case *object.Error:
+			return result
 		}
 	}
 
 	return lastEval
+}
+
+func (e *Evaluator) throwErr(node ast.Node, hint string, format string, a ...interface{}) *object.Error {
+	lineColumn := fmt.Sprintf("[Ln %d:%d] Runtime::Error -> ", e.line, e.column)
+	message := fmt.Sprintf(format, a...)
+
+	snippet := "\n\n"
+
+	// Show the actual source line if available
+	if int(e.line) > 0 && int(e.line) <= len(e.lines) {
+		sourceLine := e.lines[e.line-1]
+		lineNumStr := fmt.Sprintf("Ln %d:%d", e.line, e.column)
+
+		snippet += " Error caused by:\n"
+		snippet += fmt.Sprintf("    %s | %s\n", lineNumStr, sourceLine)
+
+		// Create pointer to error location
+		padding := strings.Repeat(" ", len(lineNumStr))
+		pointer := strings.Repeat(" ", int(e.column)-1) + "^"
+		snippet += fmt.Sprintf("    %s | %s\n", padding, pointer)
+	} else {
+		// Fallback if source line isn't available
+		snippet += " Error caused by:\n"
+		snippet += fmt.Sprintf("\t%d:%d | %s\n", e.line, e.column, node.String())
+	}
+
+	if hint != "" {
+		snippet += fmt.Sprintf("\n Hint: %s\n", hint)
+	}
+
+	return &object.Error{Message: lineColumn + message + snippet}
+}
+
+func isError(obj object.Object) bool {
+	return obj.Type() == object.ERROR_OBJECT
 }

@@ -34,7 +34,7 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		evaluator := evaluation.New()
+		evaluator := evaluation.New(line)
 
 		result := evaluator.Evaluate(program)
 

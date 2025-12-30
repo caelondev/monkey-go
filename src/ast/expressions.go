@@ -22,9 +22,7 @@ func (n *NumberLiteral) GetColumn() uint {
 func (n *NumberLiteral) expressionNode() {}
 func (n *NumberLiteral) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(n.Token.Literal)
-	out.WriteString(")")
 	return out.String()
 }
 func (n *NumberLiteral) TokenLiteral() string {
@@ -46,9 +44,7 @@ func (n *NilLiteral) GetColumn() uint {
 func (n *NilLiteral) expressionNode() {}
 func (n *NilLiteral) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString("nil")
-	out.WriteString(")")
 	return out.String()
 }
 func (n *NilLiteral) TokenLiteral() string {
@@ -71,9 +67,7 @@ func (i *Identifier) GetColumn() uint {
 func (i *Identifier) expressionNode() {}
 func (i *Identifier) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(i.Value)
-	out.WriteString(")")
 	return out.String()
 }
 func (i *Identifier) TokenLiteral() string {
@@ -97,10 +91,8 @@ func (ue *UnaryExpression) GetColumn() uint {
 func (ue *UnaryExpression) expressionNode() {}
 func (ue *UnaryExpression) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(ue.Operator.Literal)
 	out.WriteString(ue.Right.String())
-	out.WriteString(")")
 	return out.String()
 }
 func (ue *UnaryExpression) TokenLiteral() string {
@@ -125,11 +117,9 @@ func (be *BinaryExpression) GetColumn() uint {
 func (be *BinaryExpression) expressionNode() {}
 func (be *BinaryExpression) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(be.Left.String())
 	out.WriteString(be.Operator.Literal)
 	out.WriteString(be.Right.String())
-	out.WriteString(")")
 	return out.String()
 }
 func (be *BinaryExpression) TokenLiteral() string {
@@ -152,9 +142,7 @@ func (be *BooleanExpression) GetColumn() uint {
 func (be *BooleanExpression) expressionNode() {}
 func (be *BooleanExpression) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(be.Token.Literal)
-	out.WriteString(")")
 	return out.String()
 }
 func (be *BooleanExpression) TokenLiteral() string {
@@ -179,13 +167,11 @@ func (te *TernaryExpression) GetColumn() uint {
 func (te *TernaryExpression) expressionNode() {}
 func (te *TernaryExpression) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(te.Consequence.String())
 	out.WriteString(" if ")
 	out.WriteString(te.Condition.String())
 	out.WriteString(" else ")
 	out.WriteString(te.Alternative.String())
-	out.WriteString(")")
 	return out.String()
 }
 func (te *TernaryExpression) TokenLiteral() string {
@@ -209,7 +195,6 @@ func (fl *FunctionLiteral) GetColumn() uint {
 func (fl *FunctionLiteral) expressionNode() {}
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(fl.Token.Literal)
 	out.WriteString("(")
 	for i, param := range fl.Parameters {
@@ -222,7 +207,7 @@ func (fl *FunctionLiteral) String() string {
 	out.WriteString("{\n")
 	out.WriteString(fl.Body.String())
 	out.WriteString("}")
-	out.WriteString(")")
+
 	return out.String()
 }
 func (fl *FunctionLiteral) TokenLiteral() string {
@@ -246,7 +231,6 @@ func (ce *CallExpression) GetColumn() uint {
 func (ce *CallExpression) expressionNode() {}
 func (ce *CallExpression) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString(ce.Function.String())
 	out.WriteString("(")
 	for i, arg := range ce.Arguments {
@@ -255,7 +239,7 @@ func (ce *CallExpression) String() string {
 		}
 		out.WriteString(arg.String())
 	}
-	out.WriteString("))")
+	out.WriteString(")")
 	return out.String()
 }
 func (ce *CallExpression) TokenLiteral() string {
@@ -277,9 +261,7 @@ func (n *NaNLiteral) GetColumn() uint {
 func (n *NaNLiteral) expressionNode() {}
 func (n *NaNLiteral) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
 	out.WriteString("NaN")
-	out.WriteString(")")
 	return out.String()
 }
 func (n *NaNLiteral) TokenLiteral() string {
@@ -302,9 +284,7 @@ func (n *InfinityLiteral) GetColumn() uint {
 func (n *InfinityLiteral) expressionNode() {}
 func (n *InfinityLiteral) String() string {
 	var out bytes.Buffer
-	out.WriteString("(")
-	out.WriteString("inf")
-	out.WriteString(")")
+	out.WriteString("Inf")
 	return out.String()
 }
 func (n *InfinityLiteral) TokenLiteral() string {
