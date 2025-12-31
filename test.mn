@@ -1,0 +1,4 @@
+var CONSTANT_Y = 100;
+var x = 10 if CONSTANT_Y >= -Inf else 100;
+
+return x*CONSTANT_Y^undefVar+(10*true);

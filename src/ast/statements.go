@@ -157,3 +157,40 @@ func (is *IfStatement) String() string {
 func (is *IfStatement) TokenLiteral() string {
 	return is.Token.Literal
 }
+
+// ---------------- BatchAssignmentStatement ----------------
+type BatchAssignmentStatement struct {
+	Token     token.Token
+	Assignees []*Identifier
+	NewValue  Expression
+}
+
+func (bs *BatchAssignmentStatement) GetLine() uint {
+	return bs.Token.Line
+}
+func (bs *BatchAssignmentStatement) GetColumn() uint {
+	return bs.Token.Column
+}
+
+func (ba *BatchAssignmentStatement) statementNode() {}
+func (ba *BatchAssignmentStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(ba.Token.Literal)
+
+	for i := range len(ba.Assignees) - 1 {
+		assignee := ba.Assignees[i]
+		out.WriteString(assignee.String())
+		out.WriteString(", ")
+	}
+
+	assignee := ba.Assignees[len(ba.Assignees)-1]
+	out.WriteString(assignee.String())
+	out.WriteString(" = ")
+	out.WriteString(ba.NewValue.String())
+
+	return out.String()
+}
+func (ba *BatchAssignmentStatement) TokenLiteral() string {
+	return ba.Token.Literal
+}

@@ -2,7 +2,6 @@
 package evaluation
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/caelondev/monkey/src/ast"
@@ -22,13 +21,13 @@ func New(source string) Evaluator {
 	}
 }
 
-func (e *Evaluator) Evaluate(node ast.Node) object.Object {
+func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Object {
 	e.line = node.GetLine()
 	e.column = node.GetColumn()
 
 	switch node := node.(type) {
 	case *ast.Program:
-		return e.evaluateProgram(node.Statements)
+		return e.evaluateProgram(node.Statements, env)
 	case *ast.NumberLiteral:
 		return &object.Number{Value: node.Value}
 	case *ast.NilLiteral:
@@ -40,40 +39,49 @@ func (e *Evaluator) Evaluate(node ast.Node) object.Object {
 	case *ast.BooleanExpression:
 		return e.evaluateToObjectBoolean(node.Value)
 	case *ast.UnaryExpression:
-		right := e.Evaluate(node.Right)
+		right := e.Evaluate(node.Right, env)
 		if isError(right) {
 			return right
 		}
 		return e.evaluateUnaryExpression(node, right)
+
 	case *ast.BinaryExpression:
-		left := e.Evaluate(node.Left)
+		left := e.Evaluate(node.Left, env)
 		if isError(left) {
 			return left
 		}
-		right := e.Evaluate(node.Right)
+		right := e.Evaluate(node.Right, env)
 		if isError(right) {
 			return right
 		}
 		return e.evaluateBinaryExpression(node, left, right)
 	case *ast.TernaryExpression:
-		condition := e.Evaluate(node.Condition)
+		condition := e.Evaluate(node.Condition, env)
 		if isError(condition) {
 			return condition
 		}
-		return e.evaluateTernaryExpression(node, condition)
+		return e.evaluateTernaryExpression(node, condition, env)
 	case *ast.ExpressionStatement:
-		return e.Evaluate(node.Expression)
+		return e.Evaluate(node.Expression, env)
 	case *ast.BlockStatement:
-		return e.evaluateBlockStatement(node)
+		return e.evaluateBlockStatement(node, env)
 	case *ast.IfStatement:
-		condition := e.Evaluate(node.Condition)
-		return e.evaluateIfStatement(node, condition)
+		condition := e.Evaluate(node.Condition, env)
+		return e.evaluateIfStatement(node, condition, env)
 	case *ast.ReturnStatement:
 		if node.ReturnValue == nil {
 			return &object.ReturnValue{Value: NIL}
 		}
-		value := e.Evaluate(node.ReturnValue)
+		value := e.Evaluate(node.ReturnValue, env)
 		return &object.ReturnValue{Value: value}
+	case *ast.VarStatement:
+		return e.evaluateVariableDeclaration(node, env)
+	case *ast.Identifier:
+		return e.evaluateIdentifier(node, env)
+	case *ast.AssignmentExpression:
+		return e.evaluateAssignmentExpression(node, env)
+	case *ast.BatchAssignmentStatement:
+		return e.evaluateBatchAssignmentStatement(node, env)
 
 	default:
 		println("Unrecognized AST node:\n")
@@ -82,11 +90,11 @@ func (e *Evaluator) Evaluate(node ast.Node) object.Object {
 	}
 }
 
-func (e *Evaluator) evaluateProgram(statements []ast.Statement) object.Object {
+func (e *Evaluator) evaluateProgram(statements []ast.Statement, env *object.Environment) object.Object {
 	var lastEval object.Object
 
 	for _, stmt := range statements {
-		lastEval = e.Evaluate(stmt)
+		lastEval = e.Evaluate(stmt, env)
 
 		switch result := lastEval.(type) {
 		case *object.ReturnValue:
@@ -97,37 +105,6 @@ func (e *Evaluator) evaluateProgram(statements []ast.Statement) object.Object {
 	}
 
 	return lastEval
-}
-
-func (e *Evaluator) throwErr(node ast.Node, hint string, format string, a ...interface{}) *object.Error {
-	lineColumn := fmt.Sprintf("[Ln %d:%d] Runtime::Error -> ", e.line, e.column)
-	message := fmt.Sprintf(format, a...)
-
-	snippet := "\n\n"
-
-	// Show the actual source line if available
-	if int(e.line) > 0 && int(e.line) <= len(e.lines) {
-		sourceLine := e.lines[e.line-1]
-		lineNumStr := fmt.Sprintf("Ln %d:%d", e.line, e.column)
-
-		snippet += " Error caused by:\n"
-		snippet += fmt.Sprintf("    %s | %s\n", lineNumStr, sourceLine)
-
-		// Create pointer to error location
-		padding := strings.Repeat(" ", len(lineNumStr))
-		pointer := strings.Repeat(" ", int(e.column)-1) + "^"
-		snippet += fmt.Sprintf("    %s | %s\n", padding, pointer)
-	} else {
-		// Fallback if source line isn't available
-		snippet += " Error caused by:\n"
-		snippet += fmt.Sprintf("\t%d:%d | %s\n", e.line, e.column, node.String())
-	}
-
-	if hint != "" {
-		snippet += fmt.Sprintf("\n Hint: %s\n", hint)
-	}
-
-	return &object.Error{Message: lineColumn + message + snippet}
 }
 
 func isError(obj object.Object) bool {

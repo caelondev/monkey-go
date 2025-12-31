@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/caelondev/monkey/src/ast"
@@ -15,6 +16,9 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 
 	leftExpression := prefix()
+	if leftExpression == nil {
+		return nil
+	}
 
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
@@ -166,6 +170,45 @@ func (p *Parser) parseExponentExpression(left ast.Expression) ast.Expression {
 	pre := p.currentPrecedence() - 1
 	p.nextToken() // Eat CARET
 	expr.Right = p.parseExpression(pre)
+
+	return expr
+}
+
+func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
+	// Only identifiers can be reassigned
+	if left == nil {
+		return nil
+	}
+
+	ident, ok := left.(*ast.Identifier)
+	if !ok {
+		p.errors = append(p.errors, fmt.Sprintf(
+			"Cannot reassign to non-identifier '%s'", left.TokenLiteral()))
+		return nil
+	}
+
+	expr := &ast.AssignmentExpression{
+		Token:    p.currentToken,
+		Assignee: ident,
+	}
+
+	p.nextToken()
+
+	// Parse RHS at higher precedence to prevent nested assignments
+	expr.NewValue = p.parseExpression(ASSIGNMENT + 1)
+
+	// Check if parsing failed
+	if expr.NewValue == nil {
+		p.errors = append(p.errors, fmt.Sprintf(
+			"[Ln %d:%d] Invalid right-hand side in assignment",
+			p.currentToken.Line, p.currentToken.Column))
+		return nil
+	}
+
+	// Require semicolon immediately
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
+	}
 
 	return expr
 }

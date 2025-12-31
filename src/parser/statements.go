@@ -13,6 +13,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseReturnStatement()
 	case token.IF:
 		return p.parseIfStatements()
+	case token.ASSIGN:
+		return p.parseBatchAssignStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -196,6 +198,42 @@ func (p *Parser) parseIfStatements() *ast.IfStatement {
 			p.nextToken() // nextToken: advance to start of else one-line stmt
 			stmt.Alternative = p.parseStatement()
 		}
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseBatchAssignStatement() *ast.BatchAssignmentStatement {
+	stmt := &ast.BatchAssignmentStatement{Token: p.currentToken}
+
+	if !p.expectPeek(token.IDENTIFIER) {
+		return nil
+	}
+
+	firstAssignee := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+	stmt.Assignees = append(stmt.Assignees, firstAssignee)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // Eat first assignee
+
+		if !p.expectPeek(token.IDENTIFIER) {
+			return nil
+		}
+
+		assignee := &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+		stmt.Assignees = append(stmt.Assignees, assignee)
+	}
+
+	if !p.expectPeek(token.ASSIGNMENT) {
+		return nil
+	}
+
+	p.nextToken() // Advance past ASSIGNMENT TOKEN
+
+	stmt.NewValue = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
 	}
 
 	return stmt

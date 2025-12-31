@@ -290,3 +290,29 @@ func (n *InfinityLiteral) String() string {
 func (n *InfinityLiteral) TokenLiteral() string {
 	return n.Token.Literal
 }
+
+// ---------------- AssignmentExpression ----------------
+type AssignmentExpression struct {
+	Token    token.Token
+	Assignee Expression
+	NewValue Expression
+}
+
+func (n *AssignmentExpression) GetLine() uint {
+	return n.Token.Line
+}
+func (n *AssignmentExpression) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *AssignmentExpression) expressionNode() {}
+func (n *AssignmentExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString(n.Assignee.String())
+	out.WriteString(" = ")
+	out.WriteString(n.NewValue.String())
+	return out.String()
+}
+func (n *AssignmentExpression) TokenLiteral() string {
+	return n.Token.Literal
+}
