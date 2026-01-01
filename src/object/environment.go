@@ -39,11 +39,9 @@ func (e *Environment) Set(name string, value Object) (Object, bool) {
 	return value, exists
 }
 
-func (e *Environment) Declare(name string, value Object) (Object, bool) {
-	exists := e.DoesExist(name)
-
+func (e *Environment) Declare(name string, value Object) Object {
 	e.store[name] = value
-	return value, !exists
+	return value
 }
 
 func (e *Environment) DoesExist(name string) bool {

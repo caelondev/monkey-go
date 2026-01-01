@@ -1,7 +1,3 @@
-var x = 10;
+fn add(x, y) {return x+y;}
 
-var get_x = fn (){
-  return x^p;
-};
-
-get_x()
+add(0, 10)

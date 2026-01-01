@@ -55,9 +55,9 @@ func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Obje
 	case *ast.BatchAssignmentStatement:
 		return e.evaluateBatchAssignmentStatement(node, env)
 	case *ast.FunctionLiteral:
-		return &object.FunctionLiteral{Parameters: node.Parameters, Body: node.Body, Scope: env}
+		return &object.Function{Parameters: node.Parameters, Body: node.Body, Scope: env}
 	case *ast.FunctionDeclarationStatement:
-		return &object.FunctionStatement{Name: node.Name, Parameters: node.Parameters, Body: node.Body, Scope: env}
+		return e.evaluateFunctionDeclaration(node, env)
 	case *ast.CallExpression:
 		return e.evaluateCallExpression(node, env)
 

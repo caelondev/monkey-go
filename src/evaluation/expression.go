@@ -231,9 +231,38 @@ func (e *Evaluator) evaluateNumericBinaryExpression(
 }
 
 func (e *Evaluator) evaluateCallExpression(node *ast.CallExpression, env *object.Environment) object.Object {
-	fn := e.Evaluate(node.Function, env)
-	if isError(fn) {
-		return fn
+	var fn object.Object
+
+	if ident, ok := node.Function.(*ast.Identifier); ok {
+		// If we got here, this means that we're calling a function in a variable
+		fnName := ident.Value
+		foundFn, exists := env.Get(fnName)
+
+		if !exists {
+			return e.throwErr(
+				node.Function,
+				"This error occurs when an undeclared function was called",
+				"Cannot call function '%s', as it is undefined",
+				fnName,
+			)
+		}
+
+		fn = foundFn
+	} else if fnLit, ok := node.Function.(*ast.FunctionLiteral); ok {
+		args := e.evaluateExpressions(node.Arguments, env)
+
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+
+		fnLitObj := e.Evaluate(fnLit, env)
+		fn = fnLitObj
+	} else {
+		return e.throwErr(
+			node.Function,
+			"This error occurs when trying to call an invalid expression as a function",
+			"Unexpected call to an invalid expression",
+		)
 	}
 
 	args := e.evaluateExpressions(node.Arguments, env)
@@ -245,7 +274,7 @@ func (e *Evaluator) evaluateCallExpression(node *ast.CallExpression, env *object
 }
 
 func (e *Evaluator) applyFunction(fnNode, callNode ast.Node, function object.Object, args []object.Object) object.Object {
-	fn, ok := function.(*object.FunctionLiteral)
+	fn, ok := function.(*object.Function)
 	if !ok {
 		return e.throwErr(
 			fnNode,
@@ -269,11 +298,12 @@ func (e *Evaluator) applyFunction(fnNode, callNode ast.Node, function object.Obj
 	return e.unwrapFunctionValue(evaluated)
 }
 
-func (e *Evaluator) extendFunctionEnv(fn *object.FunctionLiteral, args []object.Object) *object.Environment {
+func (e *Evaluator) extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
 	// fn env is the outer env (for closure) ---
 	env := object.NewEnclosedEnvironment(fn.Scope)
 
 	for idx, param := range fn.Parameters {
+		// Assign args to params
 		env.Set(param.Value, args[idx])
 	}
 

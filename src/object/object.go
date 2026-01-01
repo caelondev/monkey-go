@@ -1,10 +1,7 @@
 package object
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
-
 	"github.com/caelondev/monkey/src/ast"
 )
 
@@ -18,7 +15,7 @@ const (
 	INFINITY_OBJECT     = "INFINITY"
 	RETURN_VALUE_OBJECT = "RETURN_VALUE"
 	ERROR_OBJECT        = "ERROR"
-	FUNCTION_OBJECT     = "FUNCTION_OBJECT"
+	FUNCTION_OBJECT     = "FUNCTION"
 )
 
 type Object interface {
@@ -114,58 +111,21 @@ func (o *Error) Inspect() string {
 	return fmt.Sprintf("Error at Ln %d:%d - %s", o.Line, o.Column, o.Message)
 }
 
-type FunctionLiteral struct {
-	Parameters []*ast.Identifier
-	Body       *ast.BlockStatement
-	Scope      *Environment
-}
-
-func (o *FunctionLiteral) Type() ObjectType {
-	return FUNCTION_OBJECT
-}
-
-func (o *FunctionLiteral) Inspect() string {
-	var out bytes.Buffer
-	params := []string{}
-	for _, p := range o.Parameters {
-		params = append(params, p.String())
-	}
-
-	out.WriteString("fn")
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") {\n")
-	out.WriteString(o.Body.String())
-	out.WriteString("\n}")
-	return out.String()
-}
-
-type FunctionStatement struct {
+type Function struct {
 	Parameters []*ast.Identifier
 	Name       *ast.Identifier
 	Body       *ast.BlockStatement
 	Scope      *Environment
 }
 
-func (o *FunctionStatement) Type() ObjectType {
+func (o *Function) Type() ObjectType {
 	return FUNCTION_OBJECT
 }
 
-func (o *FunctionStatement) Inspect() string {
-	var out bytes.Buffer
-
-	params := []string{}
-
-	for _, p := range o.Parameters {
-		params = append(params, p.String())
+func (o *Function) Inspect() string {
+	if o.Name == nil {
+		return "[ Anonymous Function ]"
 	}
 
-	out.WriteString("fn ")
-	out.WriteString(o.Name.String())
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") {\n")
-	out.WriteString(o.Body.String())
-	out.WriteString("\n}")
-	return out.String()
+	return fmt.Sprintf("[ Function '%s' ]", o.Name)
 }

@@ -100,3 +100,15 @@ func (e *Evaluator) evaluateReturnStatement(node *ast.ReturnStatement, env *obje
 	value := e.Evaluate(node.ReturnValue, env)
 	return &object.ReturnValue{Value: value}
 }
+
+func (e *Evaluator) evaluateFunctionDeclaration(node *ast.FunctionDeclarationStatement, env *object.Environment) object.Object {
+	function := &object.Function{
+		Parameters: node.Parameters,
+		Name:       node.Name,
+		Body:       node.Body,
+		Scope:      env,
+	}
+
+	value := env.Declare(node.Name.Value, function)
+	return value
+}
