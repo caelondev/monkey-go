@@ -2,23 +2,17 @@
 package evaluation
 
 import (
-	"strings"
-
 	"github.com/caelondev/monkey/src/ast"
 	"github.com/caelondev/monkey/src/object"
-	"github.com/sanity-io/litter"
 )
 
 type Evaluator struct {
 	line   uint
 	column uint
-	lines  []string
 }
 
-func New(source string) Evaluator {
-	return Evaluator{
-		lines: strings.Split(source, "\n"),
-	}
+func New() Evaluator {
+	return Evaluator{}
 }
 
 func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Object {
@@ -39,41 +33,19 @@ func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Obje
 	case *ast.BooleanExpression:
 		return e.evaluateToObjectBoolean(node.Value)
 	case *ast.UnaryExpression:
-		right := e.Evaluate(node.Right, env)
-		if isError(right) {
-			return right
-		}
-		return e.evaluateUnaryExpression(node, right)
-
+		return e.evaluateUnaryExpression(node, env)
 	case *ast.BinaryExpression:
-		left := e.Evaluate(node.Left, env)
-		if isError(left) {
-			return left
-		}
-		right := e.Evaluate(node.Right, env)
-		if isError(right) {
-			return right
-		}
-		return e.evaluateBinaryExpression(node, left, right)
+		return e.evaluateBinaryExpression(node, env)
 	case *ast.TernaryExpression:
-		condition := e.Evaluate(node.Condition, env)
-		if isError(condition) {
-			return condition
-		}
-		return e.evaluateTernaryExpression(node, condition, env)
+		return e.evaluateTernaryExpression(node, env)
 	case *ast.ExpressionStatement:
 		return e.Evaluate(node.Expression, env)
 	case *ast.BlockStatement:
 		return e.evaluateBlockStatement(node, env)
 	case *ast.IfStatement:
-		condition := e.Evaluate(node.Condition, env)
-		return e.evaluateIfStatement(node, condition, env)
+		return e.evaluateIfStatement(node, env)
 	case *ast.ReturnStatement:
-		if node.ReturnValue == nil {
-			return &object.ReturnValue{Value: NIL}
-		}
-		value := e.Evaluate(node.ReturnValue, env)
-		return &object.ReturnValue{Value: value}
+		return e.evaluateReturnStatement(node, env)
 	case *ast.VarStatement:
 		return e.evaluateVariableDeclaration(node, env)
 	case *ast.Identifier:
@@ -82,11 +54,20 @@ func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Obje
 		return e.evaluateAssignmentExpression(node, env)
 	case *ast.BatchAssignmentStatement:
 		return e.evaluateBatchAssignmentStatement(node, env)
+	case *ast.FunctionLiteral:
+		return &object.FunctionLiteral{Parameters: node.Parameters, Body: node.Body, Scope: env}
+	case *ast.FunctionDeclarationStatement:
+		return &object.FunctionStatement{Name: node.Name, Parameters: node.Parameters, Body: node.Body, Scope: env}
+	case *ast.CallExpression:
+		return e.evaluateCallExpression(node, env)
 
 	default:
-		println("Unrecognized AST node:\n")
-		litter.Dump(node)
-		return NIL
+		return e.throwErr(
+			node,
+			"This error occurs when an unhandled AST was passed.\nThis error should only happen in language development",
+			"Unrecognized Abstract Syntax Tree node:\n%v",
+			node,
+		)
 	}
 }
 

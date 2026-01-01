@@ -21,7 +21,9 @@ func (e *Evaluator) evaluateBlockStatement(node *ast.BlockStatement, env *object
 	return lastEvaluated
 }
 
-func (e *Evaluator) evaluateIfStatement(node *ast.IfStatement, condition object.Object, env *object.Environment) object.Object {
+func (e *Evaluator) evaluateIfStatement(node *ast.IfStatement, env *object.Environment) object.Object {
+	condition := e.Evaluate(node.Condition, env)
+
 	if isError(condition) {
 		return condition
 	}
@@ -33,18 +35,6 @@ func (e *Evaluator) evaluateIfStatement(node *ast.IfStatement, condition object.
 			return NIL
 		}
 
-		return e.Evaluate(node.Alternative, env)
-	}
-}
-
-func (e *Evaluator) evaluateTernaryExpression(node *ast.TernaryExpression, condition object.Object, env *object.Environment) object.Object {
-	if isError(condition) {
-		return condition
-	}
-
-	if isTruthy(condition) {
-		return e.Evaluate(node.Consequence, env)
-	} else {
 		return e.Evaluate(node.Alternative, env)
 	}
 }
@@ -77,19 +67,6 @@ func (e *Evaluator) evaluateVariableDeclaration(node *ast.VarStatement, env *obj
 	return value
 }
 
-func (e *Evaluator) evaluateIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
-	if value, ok := env.Get(node.Value); ok {
-		return value
-	}
-
-	return e.throwErr(
-		node,
-		"This error happens when a variable with that given name doesn't exist",
-		"Cannot resolve variable '%s'",
-		node.Value,
-	)
-}
-
 func (e *Evaluator) evaluateBatchAssignmentStatement(node *ast.BatchAssignmentStatement, env *object.Environment) object.Object {
 	// Check if every assignees are valid ---
 	// Then discard everything if not ---
@@ -113,4 +90,13 @@ func (e *Evaluator) evaluateBatchAssignmentStatement(node *ast.BatchAssignmentSt
 	}
 
 	return newValue
+}
+
+func (e *Evaluator) evaluateReturnStatement(node *ast.ReturnStatement, env *object.Environment) object.Object {
+	if node.ReturnValue == nil {
+		return &object.ReturnValue{Value: NIL}
+	}
+
+	value := e.Evaluate(node.ReturnValue, env)
+	return &object.ReturnValue{Value: value}
 }

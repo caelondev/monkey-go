@@ -1,17 +1,35 @@
 package object
 
+type Environment struct {
+	store map[string]Object
+	outer *Environment
+}
+
+func NewEnclosedEnvironment(outer *Environment) *Environment {
+	env := NewEnvironment()
+	env.outer = outer
+	return env
+}
+
 func NewEnvironment() *Environment {
 	s := make(map[string]Object)
 	return &Environment{store: s}
 }
 
-type Environment struct {
-	store map[string]Object
-}
-
 func (e *Environment) Get(name string) (Object, bool) {
-	val, ok := e.store[name]
-	return val, ok
+	if e == nil {
+		return nil, false
+	}
+
+	if obj, ok := e.store[name]; ok {
+		return obj, true
+	}
+
+	if e.outer != nil {
+		return e.outer.Get(name)
+	}
+
+	return nil, false
 }
 
 func (e *Environment) Set(name string, value Object) (Object, bool) {

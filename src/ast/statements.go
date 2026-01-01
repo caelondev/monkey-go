@@ -194,3 +194,55 @@ func (ba *BatchAssignmentStatement) String() string {
 func (ba *BatchAssignmentStatement) TokenLiteral() string {
 	return ba.Token.Literal
 }
+
+// ---------------- FunctionDeclarationStatement ----------------
+type FunctionDeclarationStatement struct {
+	Token      token.Token
+	Name       *Identifier
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+func (bs *FunctionDeclarationStatement) GetLine() uint {
+	return bs.Token.Line
+}
+func (bs *FunctionDeclarationStatement) GetColumn() uint {
+	return bs.Token.Column
+}
+
+func (ba *FunctionDeclarationStatement) statementNode() {}
+func (ba *FunctionDeclarationStatement) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(ba.TokenLiteral())
+	out.WriteString(" ")
+	out.WriteString(ba.Name.TokenLiteral())
+	out.WriteString("(")
+
+	if len(ba.Parameters) != 0 {
+		for i := range len(ba.Parameters) - 1 {
+
+			param := ba.Parameters[i]
+			out.WriteString(param.String())
+			out.WriteString(", ")
+		}
+
+	param := ba.Parameters[len(ba.Parameters)-1]
+	out.WriteString(param.String())
+	}
+
+	out.WriteString(") {\n")
+
+	for _, stmt := range ba.Body.Statements {
+		out.WriteString("\t")
+		out.WriteString(stmt.String())
+		out.WriteString("\n")
+	}
+
+	out.WriteString("}\n")
+
+	return out.String()
+}
+func (ba *FunctionDeclarationStatement) TokenLiteral() string {
+	return ba.Token.Literal
+}

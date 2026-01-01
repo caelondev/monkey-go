@@ -1,6 +1,12 @@
 package object
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"strings"
+
+	"github.com/caelondev/monkey/src/ast"
+)
 
 type ObjectType string
 
@@ -12,6 +18,7 @@ const (
 	INFINITY_OBJECT     = "INFINITY"
 	RETURN_VALUE_OBJECT = "RETURN_VALUE"
 	ERROR_OBJECT        = "ERROR"
+	FUNCTION_OBJECT     = "FUNCTION_OBJECT"
 )
 
 type Object interface {
@@ -92,7 +99,11 @@ func (o *ReturnValue) Inspect() string {
 }
 
 type Error struct {
+	Line    uint
+	Column  uint
 	Message string
+	Hint    string
+	NodeStr string
 }
 
 func (o *Error) Type() ObjectType {
@@ -100,5 +111,61 @@ func (o *Error) Type() ObjectType {
 }
 
 func (o *Error) Inspect() string {
-	return o.Message
+	return fmt.Sprintf("Error at Ln %d:%d - %s", o.Line, o.Column, o.Message)
+}
+
+type FunctionLiteral struct {
+	Parameters []*ast.Identifier
+	Body       *ast.BlockStatement
+	Scope      *Environment
+}
+
+func (o *FunctionLiteral) Type() ObjectType {
+	return FUNCTION_OBJECT
+}
+
+func (o *FunctionLiteral) Inspect() string {
+	var out bytes.Buffer
+	params := []string{}
+	for _, p := range o.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("fn")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(o.Body.String())
+	out.WriteString("\n}")
+	return out.String()
+}
+
+type FunctionStatement struct {
+	Parameters []*ast.Identifier
+	Name       *ast.Identifier
+	Body       *ast.BlockStatement
+	Scope      *Environment
+}
+
+func (o *FunctionStatement) Type() ObjectType {
+	return FUNCTION_OBJECT
+}
+
+func (o *FunctionStatement) Inspect() string {
+	var out bytes.Buffer
+
+	params := []string{}
+
+	for _, p := range o.Parameters {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("fn ")
+	out.WriteString(o.Name.String())
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(o.Body.String())
+	out.WriteString("\n}")
+	return out.String()
 }

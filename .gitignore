@@ -1,3 +1,3 @@
 # Test build
-monkey
-go.sum
+./monkey
+./go.sum

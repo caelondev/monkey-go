@@ -15,6 +15,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIfStatements()
 	case token.ASSIGN:
 		return p.parseBatchAssignStatement()
+	case token.FUNCTION:
+		return p.parseFunctionStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -235,6 +237,30 @@ func (p *Parser) parseBatchAssignStatement() *ast.BatchAssignmentStatement {
 	if !p.expectPeek(token.SEMICOLON) {
 		return nil
 	}
+
+	return stmt
+}
+
+func (p *Parser) parseFunctionStatement() *ast.FunctionDeclarationStatement {
+	stmt := &ast.FunctionDeclarationStatement{Token: p.currentToken}
+
+	if !p.expectPeek(token.IDENTIFIER) {
+		return nil
+	}
+
+	stmt.Name = &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+
+	if !p.expectPeek(token.LEFT_PARENTHESIS) {
+		return nil
+	}
+
+	stmt.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeek(token.LEFT_BRACE) {
+		return nil
+	}
+
+	stmt.Body = p.parseBlockStatement()
 
 	return stmt
 }
