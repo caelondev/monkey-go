@@ -62,6 +62,7 @@ func (p *Parser) currentPrecedence() int {
 func (p *Parser) createLookupTable() {
 	p.registerPrefix(token.IDENTIFIER, p.parseIdentifier)
 	p.registerPrefix(token.NUMBER, p.parseNumberExpression)
+	p.registerPrefix(token.STRING, p.parseStringLiteral)
 	p.registerPrefix(token.BANG, p.parseUnaryExpression)
 	p.registerPrefix(token.MINUS, p.parseUnaryExpression)
 

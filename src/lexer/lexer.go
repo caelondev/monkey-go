@@ -1,8 +1,6 @@
 package lexer
 
-import (
-	"github.com/caelondev/monkey/src/token"
-)
+import "github.com/caelondev/monkey/src/token"
 
 type Lexer struct {
 	source          string
@@ -85,6 +83,10 @@ func (l *Lexer) NextToken() token.Token {
 	case '}':
 		tok = l.newTokenWithPos(token.RIGHT_BRACE, l.currentChar, startLine, startColumn)
 		l.readChar()
+
+	case '\'', '"':
+		tok = l.readString(l.currentChar, startLine, startColumn)
+
 	case 0:
 		tok = token.Token{Type: token.EOF, Literal: "EOF", Line: startLine, Column: startColumn}
 		l.readChar()
@@ -112,6 +114,32 @@ func (l *Lexer) NextToken() token.Token {
 	}
 
 	return tok
+}
+
+func (l *Lexer) readString(terminator byte, line, column uint) token.Token {
+	// consume opening quote
+	l.readChar()
+	start := l.lastPosition
+
+	for {
+		if l.currentChar == 0 {
+			return l.errorToken("unterminated string", line, column)
+		}
+		if l.currentChar == '\n' {
+			return l.errorToken("string literal cannot span multiple lines", line, column)
+		}
+		if l.currentChar == terminator {
+			lit := l.source[start:l.lastPosition]
+			l.readChar() // consume closing quote
+			return token.Token{
+				Type:    token.STRING,
+				Literal: lit,
+				Line:    line,
+				Column:  column,
+			}
+		}
+		l.readChar()
+	}
 }
 
 func (l *Lexer) readNumber() string {
@@ -207,6 +235,15 @@ func (l *Lexer) newTokenWithPos(token_type token.TokenType, c byte, line, column
 	return token.Token{
 		Type:    token_type,
 		Literal: string(c),
+		Line:    line,
+		Column:  column,
+	}
+}
+
+func (l *Lexer) errorToken(msg string, line, column uint) token.Token {
+	return token.Token{
+		Type:    token.ERROR,
+		Literal: msg,
 		Line:    line,
 		Column:  column,
 	}

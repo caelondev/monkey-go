@@ -9,6 +9,7 @@ type ObjectType string
 
 const (
 	NUMBER_OBJECT       = "NUMBER"
+	STRING_OBJECT       = "STRING"
 	BOOLEAN_OBJECT      = "BOOLEAN"
 	NIL_OBJECT          = "NIL"
 	NAN_OBJECT          = "NAN"
@@ -18,9 +19,30 @@ const (
 	FUNCTION_OBJECT     = "FUNCTION"
 )
 
+var (
+	NIL          = &Nil{}
+	INFINITY     = &Infinity{Sign: 1}
+	NEG_INFINITY = &Infinity{Sign: -1}
+	NAN          = &NaN{}
+	TRUE         = &Boolean{Value: true}
+	FALSE        = &Boolean{Value: false}
+)
+
 type Object interface {
 	Type() ObjectType
 	Inspect() string
+}
+
+type String struct {
+	Value string
+}
+
+func (o *String) Type() ObjectType {
+	return STRING_OBJECT
+}
+
+func (o *String) Inspect() string {
+	return o.Value
 }
 
 type Number struct {
@@ -128,4 +150,21 @@ func (o *Function) Inspect() string {
 	}
 
 	return fmt.Sprintf("[ Function '%s' ]", o.Name)
+}
+
+type NativeFunctionFn func(
+	callNode *ast.CallExpression,
+	args []Object,
+) Object
+
+type NativeFunction struct {
+	Fn NativeFunctionFn
+}
+
+func (o *NativeFunction) Type() ObjectType {
+	return FUNCTION_OBJECT
+}
+
+func (o *NativeFunction) Inspect() string {
+	return "[ Native Function ]"
 }

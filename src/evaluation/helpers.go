@@ -9,9 +9,9 @@ import (
 
 func (e *Evaluator) evaluateToObjectBoolean(v bool) *object.Boolean {
 	if v {
-		return TRUE
+		return object.TRUE
 	}
-	return FALSE
+	return object.FALSE
 }
 
 func isTruthy(obj object.Object) bool {

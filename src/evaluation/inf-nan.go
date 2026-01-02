@@ -13,9 +13,9 @@ import (
 
 func infinityWithSign(sign int) object.Object {
 	if sign >= 0 {
-		return INFINITY
+		return object.INFINITY
 	}
-	return NEG_INFINITY
+	return object.NEG_INFINITY
 }
 
 func signFromNumber(n float64) int {
@@ -31,11 +31,11 @@ func evalInfInf(op token.TokenType, l, r *object.Infinity) object.Object {
 		if l.Sign == r.Sign {
 			return infinityWithSign(l.Sign)
 		}
-		return NAN
+		return object.NAN
 
 	case token.MINUS:
 		if l.Sign == r.Sign {
-			return NAN
+			return object.NAN
 		}
 		return infinityWithSign(l.Sign)
 
@@ -43,13 +43,13 @@ func evalInfInf(op token.TokenType, l, r *object.Infinity) object.Object {
 		return infinityWithSign(l.Sign * r.Sign)
 
 	case token.SLASH:
-		return NAN
+		return object.NAN
 
 	case token.CARET:
 		if r.Sign < 0 {
 			return &object.Number{Value: 0}
 		}
-		return INFINITY
+		return object.INFINITY
 
 	case token.EQUAL:
 		return eBool(l.Sign == r.Sign)
@@ -65,7 +65,7 @@ func evalInfInf(op token.TokenType, l, r *object.Infinity) object.Object {
 		return eBool(l.Sign >= r.Sign)
 	}
 
-	return NIL
+	return object.NIL
 }
 
 func evalInfNum(op token.TokenType, inf *object.Infinity, num *object.Number) object.Object {
@@ -78,7 +78,7 @@ func evalInfNum(op token.TokenType, inf *object.Infinity, num *object.Number) ob
 
 	case token.STAR:
 		if num.Value == 0 {
-			return NAN
+			return object.NAN
 		}
 		return infinityWithSign(inf.Sign * signFromNumber(num.Value))
 
@@ -96,17 +96,17 @@ func evalInfNum(op token.TokenType, inf *object.Infinity, num *object.Number) ob
 			return &object.Number{Value: 0}
 		}
 		if inf.Sign < 0 && num.Value != math.Floor(num.Value) {
-			return NAN
+			return object.NAN
 		}
 		if inf.Sign < 0 && int(num.Value)%2 == 0 {
-			return INFINITY
+			return object.INFINITY
 		}
 		return infinityWithSign(inf.Sign)
 
 	case token.EQUAL:
-		return FALSE
+		return object.FALSE
 	case token.NOT_EQUAL:
-		return TRUE
+		return object.TRUE
 	case token.LESS:
 		return eBool(inf.Sign < 0)
 	case token.GREATER:
@@ -117,7 +117,7 @@ func evalInfNum(op token.TokenType, inf *object.Infinity, num *object.Number) ob
 		return eBool(inf.Sign > 0)
 	}
 
-	return NAN
+	return object.NAN
 }
 
 func evalNumInf(op token.TokenType, num *object.Number, inf *object.Infinity) object.Object {
@@ -130,7 +130,7 @@ func evalNumInf(op token.TokenType, num *object.Number, inf *object.Infinity) ob
 
 	case token.STAR:
 		if num.Value == 0 {
-			return NAN
+			return object.NAN
 		}
 		return infinityWithSign(inf.Sign * signFromNumber(num.Value))
 
@@ -139,21 +139,21 @@ func evalNumInf(op token.TokenType, num *object.Number, inf *object.Infinity) ob
 
 	case token.CARET:
 		absNum := math.Abs(num.Value)
-		
+
 		if num.Value == 0 {
 			if inf.Sign > 0 {
 				return &object.Number{Value: 0}
 			}
-			return INFINITY
+			return object.INFINITY
 		}
-		
+
 		if absNum == 1 {
 			if num.Value == 1 {
 				return &object.Number{Value: 1}
 			}
-			return NAN
+			return object.NAN
 		}
-		
+
 		if inf.Sign > 0 {
 			if absNum < 1 {
 				return &object.Number{Value: 0}
@@ -161,15 +161,15 @@ func evalNumInf(op token.TokenType, num *object.Number, inf *object.Infinity) ob
 			return infinityWithSign(signFromNumber(num.Value))
 		} else {
 			if absNum < 1 {
-				return INFINITY
+				return object.INFINITY
 			}
 			return &object.Number{Value: 0}
 		}
 
 	case token.EQUAL:
-		return FALSE
+		return object.FALSE
 	case token.NOT_EQUAL:
-		return TRUE
+		return object.TRUE
 	case token.LESS:
 		return eBool(inf.Sign > 0)
 	case token.GREATER:
@@ -180,12 +180,12 @@ func evalNumInf(op token.TokenType, num *object.Number, inf *object.Infinity) ob
 		return eBool(inf.Sign < 0)
 	}
 
-	return NAN
+	return object.NAN
 }
 
 func eBool(v bool) *object.Boolean {
 	if v {
-		return TRUE
+		return object.TRUE
 	}
-	return FALSE
+	return object.FALSE
 }

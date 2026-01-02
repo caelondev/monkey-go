@@ -19,6 +19,7 @@ type Parser struct {
 	currentToken token.Token
 	peekToken    token.Token
 	errors       []string
+	hadError     bool
 
 	prefixParseFns map[token.TokenType]prefixParseFn
 	infixParseFns  map[token.TokenType]infixParseFn
@@ -78,7 +79,7 @@ func (p *Parser) expectPeek(tokenType token.TokenType) bool {
 }
 
 func (p *Parser) peekError(t token.TokenType) {
-	msg := fmt.Sprintf(
+	p.throwError(
 		"[Ln %d:%d] Expected token after '%s' to be %s, got '%s' instead",
 		p.currentToken.Line,
 		p.currentToken.Column,
@@ -86,8 +87,6 @@ func (p *Parser) peekError(t token.TokenType) {
 		t,
 		p.peekToken.Literal,
 	)
-
-	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) peekTokenIs(tokenType token.TokenType) bool {
@@ -99,11 +98,20 @@ func (p *Parser) Errors() []string {
 }
 
 func (p *Parser) noPrefixParseFnError(t token.TokenType) {
-	msg := fmt.Sprintf(
+	p.throwError(
 		"[Ln %d:%d] -> Unexpected token found: '%s'",
 		p.currentToken.Line,
 		p.currentToken.Column,
 		t,
 	)
+}
+
+func (p *Parser) throwError(format string, a ...interface{}) {
+	if p.hadError {
+		return
+	}
+
+	p.hadError = true
+	msg := fmt.Sprintf(format, a...)
 	p.errors = append(p.errors, msg)
 }

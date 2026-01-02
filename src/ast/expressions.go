@@ -7,6 +7,29 @@ import (
 )
 
 // ---------------- NumberLiteral ----------------
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (n *StringLiteral) GetLine() uint {
+	return n.Token.Line
+}
+func (n *StringLiteral) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *StringLiteral) expressionNode() {}
+func (n *StringLiteral) String() string {
+	var out bytes.Buffer
+	out.WriteString(n.Token.Literal)
+	return out.String()
+}
+func (n *StringLiteral) TokenLiteral() string {
+	return n.Token.Literal
+}
+
+// ---------------- NumberLiteral ----------------
 type NumberLiteral struct {
 	Token token.Token
 	Value float64

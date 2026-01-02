@@ -16,6 +16,10 @@ func New() Evaluator {
 }
 
 func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Object {
+	if env.GetOuter() == nil { // Global env
+		e.InitializeNativeFunctions(env)
+	}
+
 	e.line = node.GetLine()
 	e.column = node.GetColumn()
 
@@ -24,12 +28,14 @@ func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Obje
 		return e.evaluateProgram(node.Statements, env)
 	case *ast.NumberLiteral:
 		return &object.Number{Value: node.Value}
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value}
 	case *ast.NilLiteral:
-		return NIL
+		return object.NIL
 	case *ast.NaNLiteral:
-		return NAN
+		return object.NAN
 	case *ast.InfinityLiteral:
-		return INFINITY
+		return object.INFINITY
 	case *ast.BooleanExpression:
 		return e.evaluateToObjectBoolean(node.Value)
 	case *ast.UnaryExpression:
@@ -90,4 +96,14 @@ func (e *Evaluator) evaluateProgram(statements []ast.Statement, env *object.Envi
 
 func isError(obj object.Object) bool {
 	return obj.Type() == object.ERROR_OBJECT
+}
+
+func (e *Evaluator) InitializeNativeFunctions(env *object.Environment) {
+	e.registerNativeFn(env, "len", e.NATIVE_LEN_FUNCTION)
+	e.registerNativeFn(env, "print", e.NATIVE_PRINT_FUNCTION)
+}
+
+func (e *Evaluator) registerNativeFn(env *object.Environment, name string, fn object.NativeFunctionFn) {
+	fnObject := &object.NativeFunction{Fn: fn}
+	env.Declare(name, fnObject)
 }

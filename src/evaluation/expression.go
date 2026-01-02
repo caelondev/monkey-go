@@ -8,15 +8,6 @@ import (
 	"github.com/caelondev/monkey/src/token"
 )
 
-var (
-	NIL          = &object.Nil{}
-	INFINITY     = &object.Infinity{Sign: 1}
-	NEG_INFINITY = &object.Infinity{Sign: -1}
-	NAN          = &object.NaN{}
-	TRUE         = &object.Boolean{Value: true}
-	FALSE        = &object.Boolean{Value: false}
-)
-
 func (e *Evaluator) evaluateIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
 	e.line = node.GetLine()
 	e.column = node.GetColumn()
@@ -80,7 +71,7 @@ func (e *Evaluator) evaluateNegationExpression(node *ast.UnaryExpression, right 
 	case *object.Number:
 		return &object.Number{Value: -obj.Value}
 	case *object.NaN:
-		return NAN
+		return object.NAN
 	default:
 		return e.throwErr(
 			node,
@@ -122,9 +113,9 @@ func (e *Evaluator) evaluateTernaryExpression(node *ast.TernaryExpression, env *
 
 func (e *Evaluator) evaluateNotExpression(right object.Object) object.Object {
 	if !isTruthy(right) {
-		return TRUE
+		return object.TRUE
 	}
-	return FALSE
+	return object.FALSE
 }
 
 func (e *Evaluator) evaluateBinaryExpression(node *ast.BinaryExpression, env *object.Environment) object.Object {
@@ -143,11 +134,11 @@ func (e *Evaluator) evaluateBinaryExpression(node *ast.BinaryExpression, env *ob
 	if left.Type() == object.NAN_OBJECT || right.Type() == object.NAN_OBJECT {
 		switch node.Operator.Type {
 		case token.EQUAL, token.LESS, token.GREATER, token.LESS_EQUAL, token.GREATER_EQUAL:
-			return FALSE
+			return object.FALSE
 		case token.NOT_EQUAL:
-			return TRUE
+			return object.TRUE
 		default:
-			return NAN
+			return object.NAN
 		}
 	}
 
@@ -163,6 +154,8 @@ func (e *Evaluator) evaluateBinaryExpression(node *ast.BinaryExpression, env *ob
 
 	case left.Type() == object.NUMBER_OBJECT && right.Type() == object.NUMBER_OBJECT:
 		return e.evaluateNumericBinaryExpression(node, left, right)
+	case left.Type() == object.STRING_OBJECT && right.Type() == object.STRING_OBJECT:
+		return e.evaluateStringBinaryExpression(node, left, right)
 	}
 
 	return e.throwErr(
@@ -173,6 +166,28 @@ func (e *Evaluator) evaluateBinaryExpression(node *ast.BinaryExpression, env *ob
 		node.Operator.Type,
 		right.Type(),
 	)
+}
+
+func (e *Evaluator) evaluateStringBinaryExpression(node *ast.BinaryExpression, left, right object.Object) object.Object {
+	l := left.(*object.String).Value
+	r := right.(*object.String).Value
+
+	var result string
+
+	switch node.Operator.Type {
+	case token.PLUS:
+		result = l + r
+
+	default:
+		return e.throwErr(
+			node,
+			"This error occurs when an invalid string operator was used",
+			"Invalid string operator '%s'",
+			node.Operator.Literal,
+		)
+	}
+
+	return &object.String{Value: result}
 }
 
 func (e *Evaluator) evaluateNumericBinaryExpression(
@@ -218,13 +233,13 @@ func (e *Evaluator) evaluateNumericBinaryExpression(
 	}
 
 	if math.IsNaN(result) {
-		return NAN
+		return object.NAN
 	}
 	if math.IsInf(result, 1) {
-		return INFINITY
+		return object.INFINITY
 	}
 	if math.IsInf(result, -1) {
-		return NEG_INFINITY
+		return object.NEG_INFINITY
 	}
 
 	return &object.Number{Value: result}
@@ -273,34 +288,46 @@ func (e *Evaluator) evaluateCallExpression(node *ast.CallExpression, env *object
 	return e.applyFunction(node.Function, node, fn, args)
 }
 
-func (e *Evaluator) applyFunction(fnNode, callNode ast.Node, function object.Object, args []object.Object) object.Object {
-	fn, ok := function.(*object.Function)
-	if !ok {
+func (e *Evaluator) applyFunction(
+	fnNode ast.Node,
+	callNode *ast.CallExpression,
+	function object.Object,
+	args []object.Object,
+) object.Object {
+
+	switch fn := function.(type) {
+
+	case *object.Function:
+		if len(fn.Parameters) != len(args) {
+			return e.throwErr(
+				callNode,
+				"Argument count mismatch",
+				"Expected %d arguments, got %d",
+				len(fn.Parameters),
+				len(args),
+			)
+		}
+
+		extendedEnv := e.extendFunctionEnv(fn, args)
+		evaluated := e.Evaluate(fn.Body, extendedEnv)
+		return e.unwrapFunctionValue(evaluated)
+
+	case *object.NativeFunction:
+		return fn.Fn(callNode, args)
+
+	default:
 		return e.throwErr(
 			fnNode,
-			"This error occurs when you're trying to call a non-function expression",
-			"Invalid call to a non-function expression",
+			"Cannot call non-function expression",
+			"Attempted to call %s",
+			function.Type(),
 		)
 	}
-
-	if len(fn.Parameters) != len(args) {
-		return e.throwErr(
-			callNode,
-			"This error occurs when the amount of argument doesnt match the function parameter",
-			"Argument count mismatch. Expected %d argument count, got %d",
-			len(fn.Parameters),
-			len(args),
-		)
-	}
-
-	extendedEnv := e.extendFunctionEnv(fn, args)
-	evaluated := e.Evaluate(fn.Body, extendedEnv)
-	return e.unwrapFunctionValue(evaluated)
 }
 
 func (e *Evaluator) extendFunctionEnv(fn *object.Function, args []object.Object) *object.Environment {
 	// fn env is the outer env (for closure) ---
-	env := object.NewEnclosedEnvironment(fn.Scope)
+	env := object.NewEnvironment(fn.Scope)
 
 	for idx, param := range fn.Parameters {
 		// Assign args to params

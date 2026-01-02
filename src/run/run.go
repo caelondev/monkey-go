@@ -14,7 +14,7 @@ import (
 	"github.com/jwalton/gchalk"
 )
 
-var ENVIRONMENT *object.Environment = object.NewEnvironment()
+var ENVIRONMENT *object.Environment = object.NewEnvironment(nil)
 
 func RunFile(filepath string) {
 	byte, err := os.ReadFile(filepath)
@@ -50,6 +50,7 @@ func RunSource(source string, out io.Writer) object.Object {
 	}
 
 	evaluator := evaluation.New()
+
 	result := evaluator.Evaluate(program, ENVIRONMENT)
 
 	return result

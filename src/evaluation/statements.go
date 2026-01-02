@@ -32,7 +32,7 @@ func (e *Evaluator) evaluateIfStatement(node *ast.IfStatement, env *object.Envir
 		return e.Evaluate(node.Consequence, env)
 	} else {
 		if node.Alternative == nil {
-			return NIL
+			return object.NIL
 		}
 
 		return e.Evaluate(node.Alternative, env)
@@ -94,7 +94,7 @@ func (e *Evaluator) evaluateBatchAssignmentStatement(node *ast.BatchAssignmentSt
 
 func (e *Evaluator) evaluateReturnStatement(node *ast.ReturnStatement, env *object.Environment) object.Object {
 	if node.ReturnValue == nil {
-		return &object.ReturnValue{Value: NIL}
+		return &object.ReturnValue{Value: object.NIL}
 	}
 
 	value := e.Evaluate(node.ReturnValue, env)

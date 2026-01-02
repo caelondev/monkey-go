@@ -12,10 +12,12 @@ type Token struct {
 const (
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
+	ERROR   = "ERROR"
 
 	// Identifier + literal
 	IDENTIFIER = "IDENTIFIER"
 	NUMBER     = "NUMBER"
+	STRING     = "STRING"
 
 	// Operators
 	ASSIGNMENT = "="

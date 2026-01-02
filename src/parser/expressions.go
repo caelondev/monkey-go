@@ -62,6 +62,10 @@ func (p *Parser) parseUnaryExpression() ast.Expression {
 	return expr
 }
 
+func (p *Parser) parseStringLiteral() ast.Expression {
+	return &ast.StringLiteral{Token: p.currentToken, Value: p.currentToken.Literal}
+}
+
 func (p *Parser) parseGroupExpression() ast.Expression {
 	p.nextToken()                     // Eat ( token
 	expr := p.parseExpression(LOWEST) // Use LOWEST, not CALL
@@ -183,7 +187,7 @@ func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
 	ident, ok := left.(*ast.Identifier)
 	if !ok {
 		p.errors = append(p.errors, fmt.Sprintf(
-			"Cannot reassign to non-identifier '%s'", left.TokenLiteral()))
+			"[Ln %d:%d] Cannot reassign to non-identifier '%s'", left.GetLine(), left.GetColumn(), left.TokenLiteral()))
 		return nil
 	}
 
@@ -202,11 +206,6 @@ func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
 		p.errors = append(p.errors, fmt.Sprintf(
 			"[Ln %d:%d] Invalid right-hand side in assignment",
 			p.currentToken.Line, p.currentToken.Column))
-		return nil
-	}
-
-	// Require semicolon immediately
-	if !p.expectPeek(token.SEMICOLON) {
 		return nil
 	}
 
