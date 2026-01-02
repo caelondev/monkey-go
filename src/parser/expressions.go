@@ -117,6 +117,34 @@ func (p *Parser) parseNaNLiteral() ast.Expression {
 	return &ast.NaNLiteral{Token: p.currentToken}
 }
 
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	expr := &ast.ArrayLiteral{Token: p.currentToken}
+
+	if p.peekTokenIs(token.RIGHT_BRACKET) {
+		p.nextToken()
+		return expr
+	}
+
+	p.nextToken() // Eat [
+
+	firstElem := p.parseExpression(LOWEST)
+	expr.Elements = append(expr.Elements, firstElem)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken() // Eat expr
+		p.nextToken() // Eat comma
+
+		elem := p.parseExpression(LOWEST)
+		expr.Elements = append(expr.Elements, elem)
+	}
+
+	if !p.expectPeek(token.RIGHT_BRACKET) {
+		return nil
+	}
+
+	return expr
+}
+
 /*
 * [ INFIX EXPRESSIONS ]
 **/
@@ -206,6 +234,20 @@ func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
 		p.errors = append(p.errors, fmt.Sprintf(
 			"[Ln %d:%d] Invalid right-hand side in assignment",
 			p.currentToken.Line, p.currentToken.Column))
+		return nil
+	}
+
+	return expr
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	expr := &ast.IndexExpression{Token: p.currentToken, Target: left}
+
+	p.nextToken() // Eat [ ---
+
+	expr.Index = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RIGHT_BRACKET) {
 		return nil
 	}
 

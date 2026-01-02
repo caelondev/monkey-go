@@ -1,7 +1,9 @@
 package object
 
 import (
+	"bytes"
 	"fmt"
+
 	"github.com/caelondev/monkey/src/ast"
 )
 
@@ -10,6 +12,7 @@ type ObjectType string
 const (
 	NUMBER_OBJECT       = "NUMBER"
 	STRING_OBJECT       = "STRING"
+	ARRAY_OBJECT        = "ARRAY"
 	BOOLEAN_OBJECT      = "BOOLEAN"
 	NIL_OBJECT          = "NIL"
 	NAN_OBJECT          = "NAN"
@@ -42,7 +45,7 @@ func (o *String) Type() ObjectType {
 }
 
 func (o *String) Inspect() string {
-	return o.Value
+	return fmt.Sprintf("\"%s\"", o.Value)
 }
 
 type Number struct {
@@ -167,4 +170,29 @@ func (o *NativeFunction) Type() ObjectType {
 
 func (o *NativeFunction) Inspect() string {
 	return "[ Native Function ]"
+}
+
+type Array struct {
+	Elements []Object
+}
+
+func (o *Array) Type() ObjectType {
+	return ARRAY_OBJECT
+}
+
+func (o *Array) Inspect() string {
+	var out bytes.Buffer
+
+	out.WriteString("[")
+
+	for i, elem := range o.Elements {
+		out.WriteString(elem.Inspect())
+		if i != len(o.Elements)-1 {
+			out.WriteString(", ")
+		}
+	}
+
+	out.WriteString("]")
+
+	return out.String()
 }

@@ -1,1 +1,3 @@
-len(1);
+var name = prompt("Intir ur naem: ");
+
+print("hillo, " + name)

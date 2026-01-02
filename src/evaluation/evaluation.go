@@ -66,6 +66,10 @@ func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Obje
 		return e.evaluateFunctionDeclaration(node, env)
 	case *ast.CallExpression:
 		return e.evaluateCallExpression(node, env)
+	case *ast.ArrayLiteral:
+		return e.evaluateArrayLiteral(node, env)
+	case *ast.IndexExpression:
+		return e.evaluateIndexExpression(node, env)
 
 	default:
 		return e.throwErr(
@@ -101,6 +105,7 @@ func isError(obj object.Object) bool {
 func (e *Evaluator) InitializeNativeFunctions(env *object.Environment) {
 	e.registerNativeFn(env, "len", e.NATIVE_LEN_FUNCTION)
 	e.registerNativeFn(env, "print", e.NATIVE_PRINT_FUNCTION)
+	e.registerNativeFn(env, "prompt", e.NATIVE_PROMPT_FUNCTION)
 }
 
 func (e *Evaluator) registerNativeFn(env *object.Environment, name string, fn object.NativeFunctionFn) {

@@ -344,3 +344,44 @@ func (e *Evaluator) unwrapFunctionValue(evaluated object.Object) object.Object {
 
 	return evaluated
 }
+
+func (e *Evaluator) evaluateArrayLiteral(node *ast.ArrayLiteral, env *object.Environment) object.Object {
+	exprs := e.evaluateExpressions(node.Elements, env)
+	return &object.Array{Elements: exprs}
+}
+
+func (e *Evaluator) evaluateIndexExpression(node *ast.IndexExpression, env *object.Environment) object.Object {
+	target := e.Evaluate(node.Target, env)
+	index := e.Evaluate(node.Index, env)
+
+	switch {
+	case target.Type() == object.ARRAY_OBJECT && index.Type() == object.NUMBER_OBJECT:
+		return e.evaluateArrayIndexExpression(node, target, index)
+
+	default:
+		return e.throwErr(
+			node,
+			"This error occurs when trying to index an invalid expression",
+			"Cannot index expression type '%s' with index type of '%s'",
+			target.Type(),
+			index.Type(),
+		)
+	}
+}
+
+func (e *Evaluator) evaluateArrayIndexExpression(node *ast.IndexExpression, target object.Object, index object.Object) object.Object {
+	t := target.(*object.Array).Elements
+	i := int(index.(*object.Number).Value)
+	maxLen := len(t) - 1
+
+	if i < 0 || i > maxLen {
+		return e.throwErr(
+			node.Index,
+			"This error occurs when trying to index an array smaller or bigger than its current length",
+			"Array index '%d' out-of-bounds",
+			i,
+		)
+	}
+
+	return t[i]
+}

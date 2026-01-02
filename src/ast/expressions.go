@@ -339,3 +339,67 @@ func (n *AssignmentExpression) String() string {
 func (n *AssignmentExpression) TokenLiteral() string {
 	return n.Token.Literal
 }
+
+// ---------------- ArrayLiteral ----------------
+type ArrayLiteral struct {
+	Token    token.Token
+	Elements []Expression
+}
+
+func (n *ArrayLiteral) GetLine() uint {
+	return n.Token.Line
+}
+func (n *ArrayLiteral) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *ArrayLiteral) expressionNode() {}
+func (n *ArrayLiteral) String() string {
+	var out bytes.Buffer
+
+	out.WriteString("[")
+
+	for i, elem := range n.Elements {
+		out.WriteString(elem.String())
+		if i != len(n.Elements)-1 {
+			out.WriteString(", ")
+		}
+	}
+
+	out.WriteString("]")
+
+	return out.String()
+}
+
+func (n *ArrayLiteral) TokenLiteral() string {
+	return n.Token.Literal
+}
+
+// ---------------- IndexExpression ----------------
+type IndexExpression struct {
+	Token  token.Token
+	Index  Expression
+	Target Expression
+}
+
+func (n *IndexExpression) GetLine() uint {
+	return n.Token.Line
+}
+func (n *IndexExpression) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *IndexExpression) expressionNode() {}
+func (n *IndexExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(n.Target.String())
+	out.WriteString("[")
+	out.WriteString(n.Index.String())
+	out.WriteString("]")
+
+	return out.String()
+}
+func (n *IndexExpression) TokenLiteral() string {
+	return n.Token.Literal
+}

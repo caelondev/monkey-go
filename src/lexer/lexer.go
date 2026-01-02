@@ -77,6 +77,12 @@ func (l *Lexer) NextToken() token.Token {
 	case ')':
 		tok = l.newTokenWithPos(token.RIGHT_PARENTHESIS, l.currentChar, startLine, startColumn)
 		l.readChar()
+	case '[':
+		tok = l.newTokenWithPos(token.LEFT_BRACKET, l.currentChar, startLine, startColumn)
+		l.readChar()
+	case ']':
+		tok = l.newTokenWithPos(token.RIGHT_BRACKET, l.currentChar, startLine, startColumn)
+		l.readChar()
 	case '{':
 		tok = l.newTokenWithPos(token.LEFT_BRACE, l.currentChar, startLine, startColumn)
 		l.readChar()
