@@ -145,6 +145,42 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 	return expr
 }
 
+func (p *Parser) parseHashLiteral() ast.Expression {
+	expr := &ast.HashLiteral{Token: p.currentToken}
+	expr.Pairs = make(map[ast.Expression]ast.Expression)
+
+	for !p.peekTokenIs(token.RIGHT_BRACE) {
+		p.nextToken() // Move to key position
+		key := p.parseExpression(LOWEST)
+		if key == nil {
+			return nil
+		}
+
+		if !p.expectPeek(token.COLON) {
+			return nil
+		}
+
+		p.nextToken() // Move to value position
+		value := p.parseExpression(LOWEST)
+		if value == nil {
+			return nil
+		}
+
+		expr.Pairs[key] = value // ACTUALLY STORE IT!
+
+		// Handle comma or closing brace
+		if !p.peekTokenIs(token.RIGHT_BRACE) && !p.expectPeek(token.COMMA) {
+			return nil
+		}
+	}
+
+	if !p.expectPeek(token.RIGHT_BRACE) {
+		return nil
+	}
+
+	return expr
+}
+
 /*
 * [ INFIX EXPRESSIONS ]
 **/

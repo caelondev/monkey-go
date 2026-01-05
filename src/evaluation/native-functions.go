@@ -194,6 +194,24 @@ func (e *Evaluator) NATIVE_IS_INF_FUNCTION(callNode *ast.CallExpression, args []
 	return object.FALSE
 }
 
+func (e *Evaluator) NATIVE_IS_NIL_FUNCTION(callNode *ast.CallExpression, args []object.Object) object.Object {
+	if len(args) != 1 {
+		return e.throwErr(
+			callNode,
+			"This error occurs when trying to pass more than 1 argument value to the function",
+			"Expected 1 argument, got %d",
+			len(args),
+		)
+	}
+
+	isInf := args[0].Type() == object.NIL_OBJECT
+
+	if isInf {
+		return object.TRUE
+	}
+
+	return object.FALSE
+}
 func (e *Evaluator) NATIVE_RANDOM_FUNCTION(callNode *ast.CallExpression, args []object.Object) object.Object {
 	if len(args) != 0 {
 		return e.throwErr(

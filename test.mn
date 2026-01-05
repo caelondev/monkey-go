@@ -1,25 +1,18 @@
-print("Coin toss game");
-
-print("Pick a side");
-print("1: Heads");
-print("2: Tails");
-
-print() // Log new line
-var guess = to_number(prompt("Enter your guess: "));
-
-if (guess != 1 and guess != 2) {
-  print("Invalid option!");
-  return; // This should exit the program
-          // since return is a top level keyword as of now
+fn fib(n, cache) {
+    if (n <= 1) {
+        return n;
+    }
+    var cache_data = cache[n];
+    if (not is_nil(cache_data)) {
+        return cache_data;
+    }
+    var result = fib(n-1, cache) + fib(n-2, cache);
+    cache[n] = result;
+    return result;
 }
 
-var result = random() * 100; // num between 0-100
-var answer = 1 if result > 50 else 2;
+var fib_val = prompt("Enter a fibbonacci number: ");
+fib_val = to_number(fib_val);
 
-var answer_txt = "Heads" if answer == 1 else "Tails";
-
-if (answer == guess) {
-  print("You won! The answer was: " + answer_txt);
-} else {
-  print("You lose... The correct answer was: " + answer_txt);
-}
+var total = fib(fib_val, {});
+print("Fib " + to_string(fib_val) + " = " + to_string(total));

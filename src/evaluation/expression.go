@@ -410,6 +410,8 @@ func (e *Evaluator) evaluateIndexExpression(node *ast.IndexExpression, env *obje
 	switch {
 	case target.Type() == object.ARRAY_OBJECT && index.Type() == object.NUMBER_OBJECT:
 		return e.evaluateArrayIndexExpression(node, target, index)
+	case target.Type() == object.HASH_OBJECT:
+		return e.evaluateHashIndexExpreesion(node, target, index)
 
 	default:
 		return e.throwErr(
@@ -420,6 +422,27 @@ func (e *Evaluator) evaluateIndexExpression(node *ast.IndexExpression, env *obje
 			index.Type(),
 		)
 	}
+}
+
+func (e *Evaluator) evaluateHashIndexExpreesion(node *ast.IndexExpression, target, index object.Object) object.Object {
+	hash := target.(*object.Hash).Pairs
+	key, ok := index.(object.Hashable)
+
+	if !ok {
+		return e.throwErr(
+			node.Index,
+			"This error occurs when trying to use an invalid key for accessing a value in a hash",
+			"Cannot use key type '%s' for accessing a hash",
+			index.Type(),
+		)
+	}
+
+	pair, ok := hash[key.HashKey()]
+	if !ok {
+		return object.NIL
+	}
+
+	return pair.Value
 }
 
 func (e *Evaluator) evaluateArrayIndexExpression(node *ast.IndexExpression, target object.Object, index object.Object) object.Object {
@@ -448,6 +471,8 @@ func (e *Evaluator) evaluateIndexAssignmentExpression(node *ast.IndexAssignmentE
 	switch target.Type() {
 	case object.ARRAY_OBJECT:
 		return e.evaluateArrayIndexAssignmentExpression(node, target, env)
+	case object.HASH_OBJECT:
+		return e.evaluateHashIndexAssignmentExpression(node, target, env)
 
 	default:
 		return e.throwErr(
@@ -457,6 +482,30 @@ func (e *Evaluator) evaluateIndexAssignmentExpression(node *ast.IndexAssignmentE
 			target.Type(),
 		)
 	}
+}
+
+func (e *Evaluator) evaluateHashIndexAssignmentExpression(node *ast.IndexAssignmentExpression, target object.Object, env *object.Environment) object.Object {
+	hash := target.(*object.Hash).Pairs
+	index := e.Evaluate(node.Index, env)
+	if isError(index) {
+		return index
+	}
+
+	key, ok := index.(object.Hashable)
+	if !ok {
+		return e.throwErr(
+			node.Index,
+			"This error occurs when trying to use an invalid key for accessing a value in a hash",
+			"Cannot use key type '%s' for accessing a hash",
+			index.Type(),
+		)
+	}
+
+	newValue := e.Evaluate(node.NewValue, env)
+
+	hash[key.HashKey()] = object.HashPair{Key: index, Value: newValue}
+
+	return newValue
 }
 
 func (e *Evaluator) evaluateArrayIndexAssignmentExpression(node *ast.IndexAssignmentExpression, target object.Object, env *object.Environment) object.Object {
@@ -483,4 +532,35 @@ func (e *Evaluator) evaluateArrayIndexAssignmentExpression(node *ast.IndexAssign
 
 	array.Elements[int(index.Value)] = newValue
 	return newValue
+}
+
+func (e *Evaluator) evaluateHashLiteral(node *ast.HashLiteral, env *object.Environment) object.Object {
+	pairs := make(map[object.HashKey]object.HashPair)
+
+	for keyNode, valueNode := range node.Pairs {
+		key := e.Evaluate(keyNode, env)
+		if isError(key) {
+			return key
+		}
+
+		hashKey, ok := key.(object.Hashable)
+		if !ok {
+			return e.throwErr(
+				keyNode,
+				"This error occurs when trying to use an unsupported value as a key",
+				"Cannot access hash with key type '%s'",
+				key.Type(),
+			)
+		}
+
+		value := e.Evaluate(valueNode, env)
+		if isError(value) {
+			return value
+		}
+
+		hash := hashKey.HashKey()
+		pairs[hash] = object.HashPair{Key: key, Value: value}
+	}
+
+	return &object.Hash{Pairs: pairs}
 }

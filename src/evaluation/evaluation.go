@@ -76,6 +76,8 @@ func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Obje
 		return e.evaluateIndexExpression(node, env)
 	case *ast.IndexAssignmentExpression:
 		return e.evaluateIndexAssignmentExpression(node, env)
+	case *ast.HashLiteral:
+		return e.evaluateHashLiteral(node, env)
 
 	default:
 		return e.throwErr(
@@ -118,6 +120,7 @@ func (e *Evaluator) InitializeNativeFunctions(env *object.Environment) {
 	e.registerNativeFn(env, "type", e.NATIVE_TYPE_FUNCTION)
 	e.registerNativeFn(env, "is_NaN", e.NATIVE_IS_NAN_FUNCTION)
 	e.registerNativeFn(env, "is_Inf", e.NATIVE_IS_INF_FUNCTION)
+	e.registerNativeFn(env, "is_nil", e.NATIVE_IS_NIL_FUNCTION)
 	e.registerNativeFn(env, "random", e.NATIVE_RANDOM_FUNCTION)
 }
 

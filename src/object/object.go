@@ -3,6 +3,8 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
+	"strings"
 
 	"github.com/caelondev/monkey/src/ast"
 )
@@ -20,6 +22,7 @@ const (
 	RETURN_VALUE_OBJECT = "RETURN_VALUE"
 	ERROR_OBJECT        = "ERROR"
 	FUNCTION_OBJECT     = "FUNCTION"
+	HASH_OBJECT         = "HASH"
 )
 
 var (
@@ -36,6 +39,46 @@ type Object interface {
 	Inspect() string
 }
 
+type Hashable interface {
+	HashKey() HashKey
+}
+
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (o *Hash) Type() ObjectType {
+	return HASH_OBJECT
+}
+
+func (o *Hash) Inspect() string {
+	var out bytes.Buffer
+	pairs := []string{}
+	for _, pair := range o.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s", pair.Key.Inspect(), pair.Value.Inspect()))
+	}
+
+	if len(pairs) <= 0 {
+		out.WriteString("{}")
+	} else {
+		out.WriteString("{")
+		out.WriteString(strings.Join(pairs, ", "))
+		out.WriteString("}")
+	}
+
+	return out.String()
+}
+
 type String struct {
 	Value string
 }
@@ -46,6 +89,13 @@ func (o *String) Type() ObjectType {
 
 func (o *String) Inspect() string {
 	return fmt.Sprintf("\"%s\"", o.Value)
+}
+
+func (o *String) HashKey() HashKey {
+	hash := fnv.New64a()
+	hash.Write([]byte(o.Value))
+
+	return HashKey{Type: o.Type(), Value: hash.Sum64()}
 }
 
 type Number struct {
@@ -60,6 +110,10 @@ func (o *Number) Inspect() string {
 	return fmt.Sprintf("%g", o.Value)
 }
 
+func (o *Number) HashKey() HashKey {
+	return HashKey{Type: o.Type(), Value: uint64(o.Value)}
+}
+
 type Boolean struct {
 	Value bool
 }
@@ -70,6 +124,18 @@ func (o *Boolean) Type() ObjectType {
 
 func (o *Boolean) Inspect() string {
 	return fmt.Sprintf("%t", o.Value)
+}
+
+func (o *Boolean) HashKey() HashKey {
+	var value uint64
+
+	if o.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+
+	return HashKey{Type: o.Type(), Value: value}
 }
 
 type Nil struct{}

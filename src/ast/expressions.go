@@ -2,6 +2,7 @@ package ast
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/caelondev/monkey/src/token"
 )
@@ -22,7 +23,9 @@ func (n *StringLiteral) GetColumn() uint {
 func (n *StringLiteral) expressionNode() {}
 func (n *StringLiteral) String() string {
 	var out bytes.Buffer
+	out.WriteString("\"")
 	out.WriteString(n.Token.Literal)
+	out.WriteString("\"")
 	return out.String()
 }
 func (n *StringLiteral) TokenLiteral() string {
@@ -38,6 +41,7 @@ type NumberLiteral struct {
 func (n *NumberLiteral) GetLine() uint {
 	return n.Token.Line
 }
+
 func (n *NumberLiteral) GetColumn() uint {
 	return n.Token.Column
 }
@@ -432,5 +436,40 @@ func (n *IndexAssignmentExpression) String() string {
 	return out.String()
 }
 func (n *IndexAssignmentExpression) TokenLiteral() string {
+	return n.Token.Literal
+}
+
+// ---------------- HashLiteral ----------------
+type HashLiteral struct {
+	Token token.Token
+	Pairs map[Expression]Expression
+}
+
+func (n *HashLiteral) GetLine() uint {
+	return n.Token.Line
+}
+func (n *HashLiteral) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *HashLiteral) expressionNode() {}
+func (n *HashLiteral) String() string {
+	var out bytes.Buffer
+
+	pairs := []string{}
+	for key, value := range n.Pairs {
+		pairs = append(pairs, key.String()+":"+value.String())
+	}
+
+	if len(pairs) <= 0 {
+		out.WriteString("{}")
+	} else {
+		out.WriteString("{")
+		out.WriteString(strings.Join(pairs, ", "))
+		out.WriteString("}")
+	}
+	return out.String()
+}
+func (n *HashLiteral) TokenLiteral() string {
 	return n.Token.Literal
 }
