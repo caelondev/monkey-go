@@ -7,6 +7,8 @@ const (
 	LOWEST
 	ASSIGNMENT
 	TERNARY
+	OR
+	AND
 	EQUALITY
 	COMPARISON
 	ADDITIVE
@@ -17,20 +19,23 @@ const (
 )
 
 var precedence = map[token.TokenType]int{
+	token.ASSIGNMENT:       ASSIGNMENT,
+	token.IF:               TERNARY,
+	token.OR:               OR,
+	token.AND:              AND,
 	token.EQUAL:            EQUALITY,
 	token.NOT_EQUAL:        EQUALITY,
 	token.LESS:             COMPARISON,
-	token.GREATER:          COMPARISON,
 	token.LESS_EQUAL:       COMPARISON,
+	token.GREATER:          COMPARISON,
 	token.GREATER_EQUAL:    COMPARISON,
 	token.PLUS:             ADDITIVE,
 	token.MINUS:            ADDITIVE,
 	token.STAR:             MULTIPLICATIVE,
 	token.SLASH:            MULTIPLICATIVE,
 	token.CARET:            EXPONENTIATION,
+	token.NOT:              UNARY,
 	token.LEFT_PARENTHESIS: CALL,
-	token.IF:               TERNARY,
-	token.ASSIGNMENT:       ASSIGNMENT,
 	token.LEFT_BRACKET:     CALL,
 }
 
@@ -69,7 +74,6 @@ func (p *Parser) createLookupTable() {
 	p.registerPrefix(token.LEFT_BRACKET, p.parseArrayLiteral)
 	p.registerInfix(token.LEFT_BRACKET, p.parseIndexExpression) // Indexing
 
-	p.registerPrefix(token.BANG, p.parseUnaryExpression)
 	p.registerPrefix(token.MINUS, p.parseUnaryExpression)
 
 	p.registerPrefix(token.NIL, p.parseNilLiteral)
@@ -84,6 +88,9 @@ func (p *Parser) createLookupTable() {
 	p.registerInfix(token.STAR, p.parseBinaryExpression)
 	p.registerInfix(token.CARET, p.parseExponentExpression)
 
+	p.registerPrefix(token.NOT, p.parseUnaryExpression)
+	p.registerInfix(token.AND, p.parseBinaryExpression)
+	p.registerInfix(token.OR, p.parseBinaryExpression)
 	p.registerInfix(token.EQUAL, p.parseBinaryExpression)
 	p.registerInfix(token.NOT_EQUAL, p.parseBinaryExpression)
 	p.registerInfix(token.LESS, p.parseBinaryExpression)

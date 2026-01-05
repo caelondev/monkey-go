@@ -42,3 +42,11 @@ func (e *Evaluator) throwErr(node ast.Node, hint string, format string, a ...int
 		NodeStr: node.String(),
 	}
 }
+
+func (e *Evaluator) unwrapReturnValue(obj object.Object) object.Object {
+	if returnVal, ok := obj.(*object.ReturnValue); ok {
+		return returnVal.Value
+	}
+
+	return obj
+}

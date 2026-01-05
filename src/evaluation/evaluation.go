@@ -7,12 +7,16 @@ import (
 )
 
 type Evaluator struct {
-	line   uint
-	column uint
+	line         uint
+	column       uint
+	callDepth    int
+	MaxCallDepth int
 }
 
 func New() Evaluator {
-	return Evaluator{}
+	return Evaluator{
+		MaxCallDepth: 10_000,
+	}
 }
 
 func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Object {
@@ -70,6 +74,8 @@ func (e *Evaluator) Evaluate(node ast.Node, env *object.Environment) object.Obje
 		return e.evaluateArrayLiteral(node, env)
 	case *ast.IndexExpression:
 		return e.evaluateIndexExpression(node, env)
+	case *ast.IndexAssignmentExpression:
+		return e.evaluateIndexAssignmentExpression(node, env)
 
 	default:
 		return e.throwErr(
@@ -106,6 +112,13 @@ func (e *Evaluator) InitializeNativeFunctions(env *object.Environment) {
 	e.registerNativeFn(env, "len", e.NATIVE_LEN_FUNCTION)
 	e.registerNativeFn(env, "print", e.NATIVE_PRINT_FUNCTION)
 	e.registerNativeFn(env, "prompt", e.NATIVE_PROMPT_FUNCTION)
+	e.registerNativeFn(env, "time", e.NATIVE_TIME_FUNCTION)
+	e.registerNativeFn(env, "to_string", e.NATIVE_TO_STRING_FUNCTION)
+	e.registerNativeFn(env, "to_number", e.NATIVE_TO_NUMBER_FUNCTION)
+	e.registerNativeFn(env, "type", e.NATIVE_TYPE_FUNCTION)
+	e.registerNativeFn(env, "is_NaN", e.NATIVE_IS_NAN_FUNCTION)
+	e.registerNativeFn(env, "is_Inf", e.NATIVE_IS_INF_FUNCTION)
+	e.registerNativeFn(env, "random", e.NATIVE_RANDOM_FUNCTION)
 }
 
 func (e *Evaluator) registerNativeFn(env *object.Environment, name string, fn object.NativeFunctionFn) {

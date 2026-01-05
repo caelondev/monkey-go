@@ -1,3 +1,25 @@
-var name = prompt("Intir ur naem: ");
+print("Coin toss game");
 
-print("hillo, " + name)
+print("Pick a side");
+print("1: Heads");
+print("2: Tails");
+
+print() // Log new line
+var guess = to_number(prompt("Enter your guess: "));
+
+if (guess != 1 and guess != 2) {
+  print("Invalid option!");
+  return; // This should exit the program
+          // since return is a top level keyword as of now
+}
+
+var result = random() * 100; // num between 0-100
+var answer = 1 if result > 50 else 2;
+
+var answer_txt = "Heads" if answer == 1 else "Tails";
+
+if (answer == guess) {
+  print("You won! The answer was: " + answer_txt);
+} else {
+  print("You lose... The correct answer was: " + answer_txt);
+}

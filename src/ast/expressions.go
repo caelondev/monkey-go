@@ -403,3 +403,34 @@ func (n *IndexExpression) String() string {
 func (n *IndexExpression) TokenLiteral() string {
 	return n.Token.Literal
 }
+
+// ---------------- IndexAssignmentExpression ----------------
+type IndexAssignmentExpression struct {
+	Token    token.Token
+	Index    Expression
+	Target   Expression
+	NewValue Expression
+}
+
+func (n *IndexAssignmentExpression) GetLine() uint {
+	return n.Token.Line
+}
+func (n *IndexAssignmentExpression) GetColumn() uint {
+	return n.Token.Column
+}
+
+func (n *IndexAssignmentExpression) expressionNode() {}
+func (n *IndexAssignmentExpression) String() string {
+	var out bytes.Buffer
+
+	out.WriteString(n.Target.String())
+	out.WriteString("[")
+	out.WriteString(n.Index.String())
+	out.WriteString("] = ")
+	out.WriteString(n.NewValue.String())
+
+	return out.String()
+}
+func (n *IndexAssignmentExpression) TokenLiteral() string {
+	return n.Token.Literal
+}

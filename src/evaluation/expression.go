@@ -50,7 +50,7 @@ func (e *Evaluator) evaluateUnaryExpression(node *ast.UnaryExpression, env *obje
 	}
 
 	switch node.Operator.Type {
-	case token.BANG:
+	case token.NOT:
 		return e.evaluateNotExpression(right)
 	case token.MINUS:
 		return e.evaluateNegationExpression(node, right)
@@ -99,7 +99,6 @@ func (e *Evaluator) evaluateAssignmentExpression(node *ast.AssignmentExpression,
 
 func (e *Evaluator) evaluateTernaryExpression(node *ast.TernaryExpression, env *object.Environment) object.Object {
 	condition := e.Evaluate(node.Condition, env)
-
 	if isError(condition) {
 		return condition
 	}
@@ -119,12 +118,18 @@ func (e *Evaluator) evaluateNotExpression(right object.Object) object.Object {
 }
 
 func (e *Evaluator) evaluateBinaryExpression(node *ast.BinaryExpression, env *object.Environment) object.Object {
-	left := e.Evaluate(node.Left, env)
+	switch node.Operator.Type {
+	case token.OR, token.AND:
+		return e.evaluateComparisonExpression(node, env)
+	}
+
+	left := e.unwrapReturnValue(e.Evaluate(node.Left, env))
 
 	if isError(left) {
 		return left
 	}
-	right := e.Evaluate(node.Right, env)
+
+	right := e.unwrapReturnValue(e.Evaluate(node.Right, env))
 
 	if isError(right) {
 		return right
@@ -156,6 +161,8 @@ func (e *Evaluator) evaluateBinaryExpression(node *ast.BinaryExpression, env *ob
 		return e.evaluateNumericBinaryExpression(node, left, right)
 	case left.Type() == object.STRING_OBJECT && right.Type() == object.STRING_OBJECT:
 		return e.evaluateStringBinaryExpression(node, left, right)
+	case left.Type() == object.BOOLEAN_OBJECT && right.Type() == object.BOOLEAN_OBJECT:
+		return e.evaluateBooleanBinaryExpression(node, left, right)
 	}
 
 	return e.throwErr(
@@ -166,6 +173,38 @@ func (e *Evaluator) evaluateBinaryExpression(node *ast.BinaryExpression, env *ob
 		node.Operator.Type,
 		right.Type(),
 	)
+}
+
+func (e *Evaluator) evaluateBooleanBinaryExpression(node *ast.BinaryExpression, left, right object.Object) object.Object {
+	switch node.Operator.Type {
+	case token.EQUAL:
+		return e.evaluateToObjectBoolean(left.(*object.Boolean).Value == right.(*object.Boolean).Value)
+	case token.NOT_EQUAL:
+		return e.evaluateToObjectBoolean(left.(*object.Boolean).Value != right.(*object.Boolean).Value)
+	default:
+		return object.NIL // Unreachable
+	}
+}
+
+func (e *Evaluator) evaluateComparisonExpression(node *ast.BinaryExpression, env *object.Environment) object.Object {
+	left := e.Evaluate(node.Left, env)
+	right := e.Evaluate(node.Right, env)
+
+	var result bool
+
+	switch node.Operator.Type {
+	case token.AND:
+		result = isTruthy(left) && isTruthy(right)
+	case token.OR:
+		result = isTruthy(left) || isTruthy(right)
+	}
+
+	// Prevents multiple boolean allocation ---
+	if result {
+		return object.TRUE
+	} else {
+		return object.FALSE
+	}
 }
 
 func (e *Evaluator) evaluateStringBinaryExpression(node *ast.BinaryExpression, left, right object.Object) object.Object {
@@ -294,10 +333,17 @@ func (e *Evaluator) applyFunction(
 	function object.Object,
 	args []object.Object,
 ) object.Object {
-
 	switch fn := function.(type) {
-
 	case *object.Function:
+		if e.callDepth >= e.MaxCallDepth {
+			return e.throwErr(
+				fnNode,
+				"This error occurs when a function calls itself (or other functions) too deeply",
+				"Maximum call stack depth exceeded (%d calls)",
+				e.callDepth,
+			)
+		}
+
 		if len(fn.Parameters) != len(args) {
 			return e.throwErr(
 				callNode,
@@ -308,11 +354,19 @@ func (e *Evaluator) applyFunction(
 			)
 		}
 
+		e.callDepth++
+		defer func() { e.callDepth-- }()
+
 		extendedEnv := e.extendFunctionEnv(fn, args)
 		evaluated := e.Evaluate(fn.Body, extendedEnv)
-		return e.unwrapFunctionValue(evaluated)
+		return e.unwrapReturnValue(evaluated)
 
 	case *object.NativeFunction:
+		// Native functions still contributes to call stack depth
+		// but doesnt have a limiter
+		e.callDepth++
+		defer func() { e.callDepth-- }()
+
 		return fn.Fn(callNode, args)
 
 	default:
@@ -337,14 +391,6 @@ func (e *Evaluator) extendFunctionEnv(fn *object.Function, args []object.Object)
 	return env
 }
 
-func (e *Evaluator) unwrapFunctionValue(evaluated object.Object) object.Object {
-	if returnValue, ok := evaluated.(*object.ReturnValue); ok {
-		return returnValue
-	}
-
-	return evaluated
-}
-
 func (e *Evaluator) evaluateArrayLiteral(node *ast.ArrayLiteral, env *object.Environment) object.Object {
 	exprs := e.evaluateExpressions(node.Elements, env)
 	return &object.Array{Elements: exprs}
@@ -352,7 +398,14 @@ func (e *Evaluator) evaluateArrayLiteral(node *ast.ArrayLiteral, env *object.Env
 
 func (e *Evaluator) evaluateIndexExpression(node *ast.IndexExpression, env *object.Environment) object.Object {
 	target := e.Evaluate(node.Target, env)
+	if isError(target) {
+		return target
+	}
+
 	index := e.Evaluate(node.Index, env)
+	if isError(index) {
+		return index
+	}
 
 	switch {
 	case target.Type() == object.ARRAY_OBJECT && index.Type() == object.NUMBER_OBJECT:
@@ -384,4 +437,50 @@ func (e *Evaluator) evaluateArrayIndexExpression(node *ast.IndexExpression, targ
 	}
 
 	return t[i]
+}
+
+func (e *Evaluator) evaluateIndexAssignmentExpression(node *ast.IndexAssignmentExpression, env *object.Environment) object.Object {
+	target := e.Evaluate(node.Target, env)
+	if isError(target) {
+		return target
+	}
+
+	switch target.Type() {
+	case object.ARRAY_OBJECT:
+		return e.evaluateArrayIndexAssignmentExpression(node, target, env)
+
+	default:
+		return e.throwErr(
+			node.Target,
+			"This error occurs when trying to assign a non-indexable expression",
+			"Cannot re-assign non-indexable expression type '%s'",
+			target.Type(),
+		)
+	}
+}
+
+func (e *Evaluator) evaluateArrayIndexAssignmentExpression(node *ast.IndexAssignmentExpression, target object.Object, env *object.Environment) object.Object {
+	array := target.(*object.Array)
+	i := e.Evaluate(node.Index, env)
+	if isError(i) {
+		return i
+	}
+
+	newValue := e.Evaluate(node.NewValue, env)
+	if isError(newValue) {
+		return newValue
+	}
+
+	index, ok := i.(*object.Number)
+	if !ok {
+		return e.throwErr(
+			node.Index,
+			"This error occurs when trying to index an array with a non-number index",
+			"Cannot index an array with index type '%s'",
+			i.Type(),
+		)
+	}
+
+	array.Elements[int(index.Value)] = newValue
+	return newValue
 }

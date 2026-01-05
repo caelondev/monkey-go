@@ -207,37 +207,55 @@ func (p *Parser) parseExponentExpression(left ast.Expression) ast.Expression {
 }
 
 func (p *Parser) parseAssignmentExpression(left ast.Expression) ast.Expression {
-	// Only identifiers can be reassigned
 	if left == nil {
 		return nil
 	}
 
-	ident, ok := left.(*ast.Identifier)
-	if !ok {
-		p.errors = append(p.errors, fmt.Sprintf(
-			"[Ln %d:%d] Cannot reassign to non-identifier '%s'", left.GetLine(), left.GetColumn(), left.TokenLiteral()))
+	// Allow both identifiers AND index expressions
+	switch leftExpr := left.(type) {
+	case *ast.Identifier:
+		// Regular variable assignment: a = 10
+		expr := &ast.AssignmentExpression{
+			Token:    p.currentToken,
+			Assignee: leftExpr,
+		}
+		p.nextToken()
+		expr.NewValue = p.parseExpression(ASSIGNMENT + 1)
+
+		if expr.NewValue == nil {
+			p.errors = append(p.errors, fmt.Sprintf(
+				"[Ln %d:%d] Invalid right-hand side in assignment",
+				p.currentToken.Line, p.currentToken.Column))
+			return nil
+		}
+		return expr
+
+	case *ast.IndexExpression:
+		expr := &ast.IndexAssignmentExpression{
+			Token:  p.currentToken,
+			Target: leftExpr.Target, // Take Index Expr's array target
+			Index:  leftExpr.Index,
+		}
+		p.nextToken()
+		expr.NewValue = p.parseExpression(ASSIGNMENT + 1)
+
+		if expr.NewValue == nil {
+			p.errors = append(p.errors, fmt.Sprintf(
+				"[Ln %d:%d] Invalid right-hand side in assignment",
+				p.currentToken.Line, p.currentToken.Column))
+			return nil
+		}
+		return expr
+
+	default:
+		p.throwError(
+			"[Ln %d:%d] Cannot reassign to non-identifier/non-index expression '%s'",
+			p.currentToken.Line,
+			p.currentToken.Column,
+			p.currentToken.Type,
+		)
 		return nil
 	}
-
-	expr := &ast.AssignmentExpression{
-		Token:    p.currentToken,
-		Assignee: ident,
-	}
-
-	p.nextToken()
-
-	// Parse RHS at higher precedence to prevent nested assignments
-	expr.NewValue = p.parseExpression(ASSIGNMENT + 1)
-
-	// Check if parsing failed
-	if expr.NewValue == nil {
-		p.errors = append(p.errors, fmt.Sprintf(
-			"[Ln %d:%d] Invalid right-hand side in assignment",
-			p.currentToken.Line, p.currentToken.Column))
-		return nil
-	}
-
-	return expr
 }
 
 func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {

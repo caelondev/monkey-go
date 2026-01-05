@@ -49,17 +49,25 @@ const (
 	NOT_EQUAL = "!="
 
 	// Reserved keywords
-	FUNCTION     = "FUNCTION"
-	VAR          = "VAR"
-	TRUE         = "TRUE"
-	FALSE        = "FALSE"
-	IF           = "IF"
-	ELSE         = "ELSE"
-	RETURN       = "RETURN"
+	FUNCTION = "FUNCTION"
+	VAR      = "VAR"
+	ASSIGN   = "ASSIGN"
+
+	TRUE  = "TRUE"
+	FALSE = "FALSE"
+
+	IF   = "IF"
+	ELSE = "ELSE"
+
+	RETURN = "RETURN"
+
+	AND = "AND"
+	OR  = "OR"
+	NOT = "NOT"
+
 	NIL          = "NIL"
 	INFINITY     = "INFINITY"
 	NOT_A_NUMBER = "NOT_A_NUMBER"
-	ASSIGN       = "ASSIGN"
 )
 
 var reservedKeywords = map[string]TokenType{
@@ -72,6 +80,10 @@ var reservedKeywords = map[string]TokenType{
 	"return": RETURN,
 	"nil":    NIL,
 	"assign": ASSIGN,
+
+	"and": AND,
+	"or":  OR,
+	"not": NOT,
 
 	"Inf": INFINITY,
 	"NaN": NOT_A_NUMBER,
